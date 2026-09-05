@@ -323,6 +323,7 @@ body.immersive #tabs{display:none}
   width:15px;height:15px;border-radius:50%;background:var(--gold);border:none;margin-top:-5.5px}
 #pbSeek::-moz-range-thumb{width:15px;height:15px;border-radius:50%;
   background:var(--gold);border:none}
+#playbar[hidden]{display:none}
 body.immersive #playbar{display:none}
 
 #msg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
@@ -446,7 +447,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-05c',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-05d',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
