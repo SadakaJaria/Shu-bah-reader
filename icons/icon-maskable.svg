@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- النسخة القابلة للقصّ: المحتوى داخل ٦٠٪ الوسطى ليصمد مع أي قناع -->
+  <defs>
+    <radialGradient id="field2" cx="50%" cy="42%" r="72%">
+      <stop offset="0%"  stop-color="#153426"/>
+      <stop offset="100%" stop-color="#0a1712"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#field2)"/>
+  <g transform="translate(256 256) scale(0.66) translate(-256 -256)">
+    <g fill="none" stroke="#d9b558" stroke-linecap="round">
+      <circle cx="256" cy="256" r="132" stroke-width="12"/>
+      <circle cx="256" cy="256" r="96"  stroke-width="5" stroke-opacity=".62"/>
+    </g>
+    <g fill="#e3c87b">
+      <circle cx="256" cy="88"  r="19"/><circle cx="374" cy="138" r="19"/>
+      <circle cx="424" cy="256" r="19"/><circle cx="374" cy="374" r="19"/>
+      <circle cx="256" cy="424" r="19"/><circle cx="138" cy="374" r="19"/>
+      <circle cx="88"  cy="256" r="19"/><circle cx="138" cy="138" r="19"/>
+    </g>
+    <circle cx="256" cy="256" r="26" fill="#d9b558"/>
+  </g>
+</svg>

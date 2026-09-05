@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- ═══ أيقونة «مصحف شعبة» ═══
+       العلامة: وردة نهاية الآية — الرمز الوحيد الخاصّ بتنضيد المصحف وحده،
+       لا كتابٌ مفتوح يصلح لأي تطبيق. تُقرأ في ٤٨ بكسل دائرةً ذهبية واضحة. -->
+  <defs>
+    <radialGradient id="field" cx="50%" cy="42%" r="72%">
+      <stop offset="0%"  stop-color="#153426"/>
+      <stop offset="100%" stop-color="#0a1712"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#field)"/>
+
+  <g fill="none" stroke="#d9b558" stroke-linecap="round">
+    <!-- الحلقة الخارجية -->
+    <circle cx="256" cy="256" r="132" stroke-width="12"/>
+    <!-- الحلقة الداخلية: فراغُ الرقم في المصحف -->
+    <circle cx="256" cy="256" r="96"  stroke-width="5" stroke-opacity=".62"/>
+  </g>
+
+  <!-- ثماني بتلات حول الحلقة، كوردة نهاية الآية -->
+  <g fill="#e3c87b">
+    <circle cx="256" cy="88"  r="19"/>
+    <circle cx="374" cy="138" r="19"/>
+    <circle cx="424" cy="256" r="19"/>
+    <circle cx="374" cy="374" r="19"/>
+    <circle cx="256" cy="424" r="19"/>
+    <circle cx="138" cy="374" r="19"/>
+    <circle cx="88"  cy="256" r="19"/>
+    <circle cx="138" cy="138" r="19"/>
+  </g>
+
+  <!-- القلب: نقطة واحدة ساكنة -->
+  <circle cx="256" cy="256" r="26" fill="#d9b558"/>
+</svg>

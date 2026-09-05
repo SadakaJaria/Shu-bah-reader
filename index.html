@@ -8,6 +8,12 @@
 <meta name="theme-color" content="#f3ede0" media="(prefers-color-scheme: light)"/>
 <meta name="theme-color" content="#0a1712" media="(prefers-color-scheme: dark)"/>
 <title>مصحف شعبة</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="icon" href="icons/icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="مصحف شعبة"/>
 <style>
 /* ══════════ الخطوط: محلّية بالكامل — يعمل التطبيق دون إنترنت ══════════
    Scheherazade New (SIL, رخصة OFL) لا Amiri Quran: الأخير لا يغطّي U+065E
@@ -31,12 +37,19 @@
      أكبر بنحو ٥٧٪ في الصفحة الكاملة نفسها */
   --font-quran:"Lateef","Scheherazade New","Noto Naskh Arabic","Geeza Pro",serif;
 }
+/* الوضع الليلي: يتبع الجهاز ما لم يختر المستخدم صراحةً.
+   data-theme على <html> يحسم الأمر في الاتجاهين. */
 @media (prefers-color-scheme:dark){
-  :root{
+  :root:not([data-theme="day"]){
     --mushaf-bg:#0f1a15; --mushaf-ink:#e6dcc0; --mushaf-shade:rgba(217,181,88,.05);
     --bar:#0a1712; --bar-ink:#f0e4bf; --bar-line:rgba(217,181,88,.3);
     --gold:#d9b558; --gold-strong:#e3c87b;
   }
+}
+:root[data-theme="night"]{
+  --mushaf-bg:#0f1a15; --mushaf-ink:#e6dcc0; --mushaf-shade:rgba(217,181,88,.05);
+  --bar:#0a1712; --bar-ink:#f0e4bf; --bar-line:rgba(217,181,88,.3);
+  --gold:#d9b558; --gold-strong:#e3c87b;
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
@@ -98,25 +111,73 @@ body.immersive #top{display:none}
   color:var(--gold-strong);font-family:var(--font-ui);font-size:.4em;font-weight:700;
   text-align:center;vertical-align:middle}
 
+/* ── الألواح والتبويبات ── */
+#panes{flex:1 1 auto;min-height:0;position:relative}
+.pane{position:absolute;inset:0;display:none;flex-direction:column}
+.pane.on{display:flex}
+
+#tabs{flex:0 0 auto;z-index:20;display:flex;
+  padding:6px 8px calc(env(safe-area-inset-bottom) + 6px);
+  background:var(--bar);border-top:1px solid var(--bar-line)}
+#tabs button{flex:1;min-width:0;height:58px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  border:none;background:transparent;border-radius:14px;cursor:pointer;
+  color:var(--bar-ink);opacity:.55;font-family:var(--font-ui);
+  transition:opacity .18s,background .18s}
+#tabs button svg{width:23px;height:23px;fill:none;stroke:currentColor;
+  stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#tabs button b{font-size:12.5px;font-weight:700}
+/* التبويب المختار: خلفية ذهبية صريحة لا خطّ رفيع — تُرى من بعيد */
+#tabs button.on{opacity:1;color:var(--gold-strong);background:var(--mushaf-shade)}
+#tabs button.on svg{stroke-width:2.3}
+body.immersive #tabs{display:none}
+
+/* رأس اللوح */
+.pane-head{flex:0 0 auto;display:flex;align-items:center;gap:6px;
+  padding:calc(env(safe-area-inset-top) + 8px) 10px 8px;
+  background:var(--bar);border-bottom:1px solid var(--bar-line)}
+.pane-head b{flex:1;text-align:center;font-size:17px;font-weight:700;color:var(--gold-strong)}
+.pane-head .pad{width:46px;flex:0 0 auto}
+.pane-head button{width:46px;height:40px;flex:0 0 auto;border:none;background:transparent;
+  color:var(--gold-strong);cursor:pointer;border-radius:12px}
+.pane-head button svg{width:24px;height:24px;fill:none;stroke:currentColor;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pane-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:10px 12px calc(env(safe-area-inset-bottom) + 16px)}
+
+/* ── لوح المتابعة ── */
+.card{border:1px solid var(--bar-line);border-radius:18px;padding:16px;
+  margin-bottom:12px;background:var(--bar);color:var(--bar-ink)}
+.ring-wrap{display:flex;align-items:center;gap:16px}
+.ring{flex:0 0 auto;width:104px;height:104px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:11;stroke-linecap:round}
+.ring .bg{stroke:var(--bar-line)}
+.ring .fg{stroke:var(--gold);transition:stroke-dasharray .5s ease}
+.ring-txt{flex:1;min-width:0}
+.ring-txt .pct{font-size:34px;font-weight:700;color:var(--gold-strong);line-height:1.1}
+.ring-txt .sub{font-size:14px;opacity:.72;margin-top:4px;line-height:1.7}
+.bar{height:12px;border-radius:8px;background:var(--bar-line);overflow:hidden;margin:12px 0 8px}
+.bar i{display:block;height:100%;background:var(--gold);border-radius:8px;transition:width .4s}
+.stats{display:flex;gap:10px}
+.stat{flex:1;text-align:center;border:1px solid var(--bar-line);border-radius:14px;padding:12px 6px}
+.stat b{display:block;font-size:26px;font-weight:700;color:var(--gold-strong)}
+.stat span{display:block;font-size:12px;opacity:.68;margin-top:3px}
+.card h3{font-size:15.5px;font-weight:700;margin-bottom:10px;color:var(--gold-strong)}
+.plan{display:flex;gap:8px;flex-wrap:wrap}
+.plan button{flex:1;min-width:44px;height:52px;border:1.5px solid var(--bar-line);
+  border-radius:14px;background:transparent;color:var(--bar-ink);cursor:pointer;
+  font-family:var(--font-ui);font-size:16px;font-weight:700}
+.plan button.on{background:var(--gold);color:#2a2313;border-color:var(--gold)}
+.danger{width:100%;height:52px;border:1.5px solid var(--bar-line);border-radius:14px;
+  background:transparent;color:var(--bar-ink);cursor:pointer;
+  font-family:var(--font-ui);font-size:15px;font-weight:700;opacity:.8}
+
 /* ── صفحة المصحف المتجهة (SVG) ── */
 #page.svgmode{display:flex;align-items:center;justify-content:center;padding:4px}
 #page.svgmode svg{width:100%;height:100%;display:block}
 /* الحبر مرسوم بلون ثابت في الملف؛ نتجاوزه ليتبع الوضع الغامق */
 #page.svgmode svg [fill="#231f20"]{fill:var(--mushaf-ink)}
 #page.svgmode .ayahPolygon{cursor:pointer}
-
-/* ── الألواح: الفهرس والبحث ── */
-.sheet{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;background:var(--bar)}
-.sheet.show{display:flex}
-.sh-head{flex:0 0 auto;display:flex;align-items:center;gap:6px;
-  padding:calc(env(safe-area-inset-top) + 8px) 8px 8px;border-bottom:1px solid var(--bar-line)}
-.sh-head b{flex:1;text-align:center;font-size:17.5px;font-weight:700;color:var(--gold-strong)}
-.sh-head .pad{width:46px;flex:0 0 auto}
-.sh-close{width:46px;height:40px;flex:0 0 auto;border:none;background:transparent;
-  color:var(--gold-strong);cursor:pointer}
-.sh-close svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-.sh-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  padding:8px 10px calc(env(safe-area-inset-bottom) + 16px)}
 
 /* صفٌّ كبير يسهل ضغطه */
 .row{display:flex;align-items:center;gap:12px;width:100%;
@@ -149,39 +210,48 @@ body.immersive #top{display:none}
 <body>
 
 <div id="reader">
-  <div id="top">
-    <button id="idxBtn" aria-label="فهرس السور">
-      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-    </button>
-    <div id="label"></div>
-    <button id="findBtn" aria-label="بحث">
-      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
-    </button>
-  </div>
-  <div id="page"></div>
-</div>
+  <div id="panes">
 
-<div class="sheet" id="idxSheet">
-  <div class="sh-head">
-    <button class="sh-close" data-close="idxSheet" aria-label="إغلاق">
-      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
-    </button>
-    <b>فهرس السور</b><span class="pad"></span>
-  </div>
-  <div class="sh-body" id="idxBody"></div>
-</div>
+    <section class="pane on" id="paneMushaf">
+      <div id="top">
+        <button id="themeBtn" aria-label="الوضع النهاري والليلي">
+          <svg id="themeIcon" viewBox="0 0 24 24"></svg>
+        </button>
+        <div id="label"></div>
+        <span class="pad" style="width:46px"></span>
+      </div>
+      <div id="page"></div>
+    </section>
 
-<div class="sheet" id="findSheet">
-  <div class="sh-head">
-    <button class="sh-close" data-close="findSheet" aria-label="إغلاق">
-      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    <section class="pane" id="paneTrack">
+      <div class="pane-head"><span class="pad"></span><b>متابعة القراءة</b><span class="pad"></span></div>
+      <div class="pane-body" id="trackBody"></div>
+    </section>
+
+    <section class="pane" id="paneIndex">
+      <div class="pane-head"><span class="pad"></span><b>الفهرس والبحث</b><span class="pad"></span></div>
+      <div class="pane-body">
+        <input id="q" type="search" placeholder="كلمة من القرآن · اسم سورة · رقم صفحة" autocomplete="off"/>
+        <div id="qOut"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <nav id="tabs">
+    <button data-tab="paneMushaf" class="on">
+      <svg viewBox="0 0 24 24"><path d="M12 6c-2-1.5-4.5-2-8-2v14c3.5 0 6 .5 8 2 2-1.5 4.5-2 8-2V4c-3.5 0-6 .5-8 2zM12 6v14"/></svg>
+      <b>المصحف</b>
     </button>
-    <b>بحث</b><span class="pad"></span>
-  </div>
-  <div class="sh-body">
-    <input id="q" type="search" placeholder="كلمة من القرآن · اسم سورة · رقم صفحة" autocomplete="off"/>
-    <div id="qOut"><div class="hint">اكتب كلمةً للبحث في المصحف كلّه</div></div>
-  </div>
+    <button data-tab="paneTrack">
+      <svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 8-8M21 8v5h-5"/></svg>
+      <b>المتابعة</b>
+    </button>
+    <button data-tab="paneIndex">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      <b>الفهرس</b>
+    </button>
+  </nav>
 </div>
 
 <div id="msg" class="show">جارِ فتح المصحف…</div>
@@ -616,6 +686,9 @@ async function renderSvg(p){
     if(token !== svgToken) return;
     pageEl.innerHTML = t;
     pageEl.classList.remove('loading');
+    // أربع ثوانٍ على الصفحة = قراءة. التسجيل تلقائي كما في «صدقة جارية».
+    clearTimeout(markTimer);
+    markTimer = setTimeout(() => { if(current === p) markRead(p); }, 4000);
     // تحميل مسبق للصفحة التالية: التقليب يصير فورياً
     if(p < TOTAL) fetchSvg(p + 1).catch(() => {});
   }catch(e){
@@ -715,35 +788,140 @@ pageEl.addEventListener('click', () => { if(!('ontouchstart' in window)) toggleI
 document.addEventListener('keydown', e => {
   if(e.key === 'ArrowLeft') nextPage();
   else if(e.key === 'ArrowRight') prevPage();
-  else if(e.key === 'Escape') closeSheets();
+  else if(e.key === 'Escape') switchTab('paneMushaf');
 });
 
-/* ══════════ الفهرس والبحث ══════════ */
-function openSheet(id){ $(id).classList.add('show'); }
-function closeSheets(){ document.querySelectorAll('.sheet').forEach(x => x.classList.remove('show')); }
-document.querySelectorAll('[data-close]').forEach(b =>
-  b.addEventListener('click', closeSheets));
+/* ══════════ التبويبات ══════════ */
+let currentTab = 'paneMushaf';
+function switchTab(id){
+  currentTab = id;
+  document.querySelectorAll('.pane').forEach(x => x.classList.toggle('on', x.id === id));
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
+  if(id === 'paneTrack') renderTrack();
+  if(id === 'paneIndex' && !$('q').value.trim()) showSuraList();
+}
+document.querySelectorAll('#tabs button').forEach(b =>
+  b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
+/* ══════════ الوضع النهاري والليلي ══════════ */
+const SUN  = '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4"/>';
+const MOON = '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>';
+function applyTheme(t){
+  const root = document.documentElement;
+  if(t) root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
+  const dark = t === 'night' ||
+    (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  // الأيقونة تعرض ما ستصير إليه بالضغط، لا ما هي عليه الآن
+  $('themeIcon').innerHTML = dark ? SUN : MOON;
+  const m = document.querySelector('meta[name="theme-color"]');
+  if(m) m.setAttribute('content', dark ? '#0a1712' : '#f3ede0');
+}
+$('themeBtn').addEventListener('click', () => {
+  const dark = document.documentElement.getAttribute('data-theme') === 'night' ||
+    (!document.documentElement.hasAttribute('data-theme') && window.matchMedia &&
+     window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const next = dark ? 'day' : 'night';
+  try{ localStorage.setItem('shubah:theme', next); }catch(_){}
+  applyTheme(next);
+});
+
+/* ══════════ متابعة القراءة ══════════
+   على نهج «صدقة جارية»: الصفحات تُسجَّل تلقائياً أثناء القراءة لا بزرّ.
+   read سلسلة ٦٠٤ خانة: خانة لكل صفحة. */
+const TRACK_KEY = 'shubah:track';
+let TRACK = null, markTimer = null;
+
+function loadTrack(){
+  try{ TRACK = JSON.parse(localStorage.getItem(TRACK_KEY)); }catch(_){}
+  if(!TRACK || typeof TRACK.read !== 'string' || TRACK.read.length !== 604)
+    TRACK = { read:'0'.repeat(604), days:{}, plan:5, khatmas:0 };
+  return TRACK;
+}
+const saveTrack = () => { try{ localStorage.setItem(TRACK_KEY, JSON.stringify(TRACK)); }catch(_){} };
+const dayKey = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+
+function markRead(p){
+  const i = p - 1;
+  if(!TRACK || TRACK.read[i] === '1') return;
+  TRACK.read = TRACK.read.slice(0, i) + '1' + TRACK.read.slice(i + 1);
+  const k = dayKey(new Date());
+  TRACK.days[k] = (TRACK.days[k] || 0) + 1;
+  if(TRACK.read.indexOf('0') === -1){        // ختمة كاملة
+    TRACK.khatmas++;
+    TRACK.read = '0'.repeat(604);
+  }
+  saveTrack();
+  if(currentTab === 'paneTrack') renderTrack();
+}
+
+function readCount(){ return (TRACK.read.match(/1/g) || []).length; }
+function streakDays(){
+  const d = new Date(); let n = 0;
+  if(!TRACK.days[dayKey(d)]) d.setDate(d.getDate() - 1);   // اليوم لم يبدأ بعد
+  while(TRACK.days[dayKey(d)]){ n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+
+function renderTrack(){
+  const done = readCount(), pct = Math.round(done / 604 * 100);
+  const todayN = TRACK.days[dayKey(new Date())] || 0;
+  const plan = TRACK.plan, left = 604 - done;
+  const days = plan > 0 ? Math.ceil(left / plan) : 0;
+  const C = 2 * Math.PI * 44;
+
+  $('trackBody').innerHTML =
+    '<div class="card"><div class="ring-wrap">' +
+      '<svg class="ring" viewBox="0 0 104 104">' +
+        '<circle class="bg" cx="52" cy="52" r="44"/>' +
+        '<circle class="fg" cx="52" cy="52" r="44" stroke-dasharray="' +
+          (C * pct / 100).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg>' +
+      '<div class="ring-txt"><div class="pct">' + arNum(pct) + '٪</div>' +
+        '<div class="sub">قرأتَ ' + arNum(done) + ' من ' + arNum(604) + ' صفحة' +
+        (left ? '<br>بقي ' + arNum(left) + ' صفحة · نحو ' + arNum(days) + ' يوماً بوردك' : '<br>تمّت الختمة') +
+        '</div></div></div></div>' +
+
+    '<div class="card"><h3>ورد اليوم</h3>' +
+      '<div class="bar"><i style="width:' + Math.min(100, plan ? todayN / plan * 100 : 0) + '%"></i></div>' +
+      '<div class="sub" style="font-size:15px">' + arNum(todayN) + ' من ' + arNum(plan) + ' صفحات</div></div>' +
+
+    '<div class="card"><div class="stats">' +
+      '<div class="stat"><b>' + arNum(streakDays()) + '</b><span>يوماً متتابعاً</span></div>' +
+      '<div class="stat"><b>' + arNum(TRACK.khatmas) + '</b><span>ختمة كاملة</span></div>' +
+      '<div class="stat"><b>' + arNum(current || 1) + '</b><span>الصفحة الآن</span></div>' +
+    '</div></div>' +
+
+    '<div class="card"><h3>كم صفحة في اليوم؟</h3><div class="plan" id="planRow">' +
+      [1,2,5,10,20].map(n => '<button data-plan="' + n + '"' +
+        (n === plan ? ' class="on"' : '') + '>' + arNum(n) + '</button>').join('') +
+    '</div></div>' +
+
+    '<button class="danger" id="resetBtn">إعادة الختمة من الصفر</button>';
+
+  $('planRow').querySelectorAll('button').forEach(b =>
+    b.addEventListener('click', () => { TRACK.plan = +b.dataset.plan; saveTrack(); renderTrack(); }));
+  $('resetBtn').addEventListener('click', () => {
+    if(!confirm('تُمحى الصفحات المقروءة ويبدأ العدّ من الصفر. أمتابع؟')) return;
+    TRACK.read = '0'.repeat(604); saveTrack(); renderTrack();
+  });
+}
+
+/* ══════════ الفهرس والبحث ══════════ */
 function suraRow(id, sub){
   const b = document.createElement('button');
   b.className = 'row';
   b.innerHTML = '<span class="n">' + arNum(id) + '</span><span class="t"><b>سورة '
     + SURAS[id] + '</b><span>' + sub + '</span></span>';
-  b.addEventListener('click', () => { closeSheets(); goto(SURA_PAGE[id]); });
+  b.addEventListener('click', () => { switchTab('paneMushaf'); goto(SURA_PAGE[id]); });
   return b;
 }
 
-$('idxBtn').addEventListener('click', () => {
-  const body = $('idxBody');
-  if(!body.children.length){
-    const frag = document.createDocumentFragment();
-    for(let i = 1; i <= 114; i++) frag.appendChild(suraRow(i, 'صفحة ' + arNum(SURA_PAGE[i])));
-    body.appendChild(frag);
-  }
-  openSheet('idxSheet');
-});
-
-$('findBtn').addEventListener('click', () => { openSheet('findSheet'); $('q').focus(); });
+function showSuraList(){
+  const out = $('qOut');
+  out.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for(let i = 1; i <= 114; i++) frag.appendChild(suraRow(i, 'صفحة ' + arNum(SURA_PAGE[i])));
+  out.appendChild(frag);
+}
 
 let qTimer = null;
 $('q').addEventListener('input', () => {
@@ -754,17 +932,16 @@ $('q').addEventListener('input', () => {
 function runSearch(){
   const out = $('qOut');
   const raw = $('q').value.trim();
+  if(!raw){ showSuraList(); return; }
   out.innerHTML = '';
-  if(!raw){ out.innerHTML = '<div class="hint">اكتب كلمةً للبحث في المصحف كلّه</div>'; return; }
 
-  // رقم = صفحة
   const digits = raw.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
   if(/^\d+$/.test(digits)){
     const p = Math.max(1, Math.min(TOTAL, parseInt(digits)));
     const b = document.createElement('button');
     b.className = 'row';
-    b.innerHTML = '<span class="n">↵</span><span class="t"><b>صفحة ' + arNum(p) + '</b></span>';
-    b.addEventListener('click', () => { closeSheets(); goto(p); });
+    b.innerHTML = '<span class="n">·</span><span class="t"><b>صفحة ' + arNum(p) + '</b></span>';
+    b.addEventListener('click', () => { switchTab('paneMushaf'); goto(p); });
     out.appendChild(b);
     return;
   }
@@ -772,8 +949,6 @@ function runSearch(){
   const q = norm(raw);
   const frag = document.createDocumentFragment();
   let n = 0;
-
-  // أسماء السور أوّلاً
   for(let i = 1; i <= 114 && n < 8; i++){
     if(norm(SURAS[i]).indexOf(q) !== -1){ frag.appendChild(suraRow(i, 'صفحة ' + arNum(SURA_PAGE[i]))); n++; }
   }
@@ -789,18 +964,12 @@ function runSearch(){
     b.innerHTML = '<span class="n">' + arNum(v.aya) + '</span><span class="t"><b>'
       + SURAS[v.sura] + ' · صفحة ' + arNum(v.page) + '</b><i>'
       + (v.text.length > 95 ? v.text.slice(0, 95) + ' …' : v.text) + '</i></span>';
-    b.addEventListener('click', () => { closeSheets(); goto(v.page); });
+    b.addEventListener('click', () => { switchTab('paneMushaf'); goto(v.page); });
     frag.appendChild(b);
   }
 
   if(!n && !hits){ out.innerHTML = '<div class="hint">لا نتيجة</div>'; return; }
   out.appendChild(frag);
-  if(hits >= 60){
-    const d = document.createElement('div');
-    d.className = 'hint';
-    d.textContent = 'عُرضت أوّل ٦٠ نتيجة';
-    out.appendChild(d);
-  }
 }
 
 // دوران الشاشة أو تغيّر أبعادها: سعة السطر تتبع الارتفاع، فنعيد البناء
@@ -839,6 +1008,12 @@ async function preloadFonts(){
 }
 
 (async function start(){
+  let saved = null;
+  try{ saved = localStorage.getItem('shubah:theme'); }catch(_){}
+  applyTheme(saved);
+  loadTrack();
+  if('serviceWorker' in navigator)
+    navigator.serviceWorker.register('sw.js').catch(() => {});
   try{
     await loadQuran();
   }catch(_){
