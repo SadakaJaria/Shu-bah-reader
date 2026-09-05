@@ -72,18 +72,19 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 #label{flex:1;min-width:0;text-align:center;overflow:hidden}
 /* خرطوش اسم السورة — على هيئة إطار عنوان السورة في المصحف:
    حدٌّ ذهبي، وخطٌّ داخلي رفيع، ومعيّنان على الطرفين. */
-.cart{position:relative;display:inline-block;max-width:calc(100% - 26px);
-  padding:4px 16px;border:1.5px solid var(--gold);border-radius:7px;
+.cart{position:relative;display:inline-flex;align-items:center;
+  max-width:calc(100% - 26px);padding:4px 15px;
+  border:1.5px solid var(--gold);border-radius:8px;
   box-shadow:inset 0 0 0 2.5px var(--bar), inset 0 0 0 3.5px var(--bar-line);
-  font-size:15.5px;font-weight:700;color:var(--gold-strong);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+  color:var(--gold-strong);vertical-align:middle}
 .cart::before,.cart::after{content:"";position:absolute;top:50%;
   width:7px;height:7px;margin-top:-3.5px;background:var(--gold);transform:rotate(45deg)}
 .cart::before{right:-4.5px}
 .cart::after{left:-4.5px}
-.pg{margin-inline-start:9px;font-size:14px;font-weight:700;
-  color:var(--gold-strong);opacity:.72;vertical-align:middle}
-/* لمسةٌ على الصفحة تُخفي الشريط: الشاشة كلّها للمصحف */
+.cart .nm{font-size:15.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cart .sep{flex:0 0 auto;width:1px;height:15px;margin:0 10px;background:var(--bar-line)}
+.cart .pg{flex:0 0 auto;font-size:15px;font-weight:700;opacity:.85}
+
 body.immersive #top{display:none}
 
 /* ── الصفحة: خمسة عشر سطراً ── */
@@ -168,16 +169,11 @@ body.immersive #tabs{display:none}
 .prog-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font-size:40px;font-weight:700;color:var(--gold-strong);letter-spacing:-1px}
 .prog-sub{text-align:center;font-size:16px;line-height:1.8}
-.prog-today{text-align:center;font-size:14px;opacity:.66;margin-top:6px}
 .stats{display:flex;gap:10px}
 .stat{flex:1;text-align:center;border:1px solid var(--bar-line);border-radius:14px;padding:12px 6px}
 .stat b{display:block;font-size:26px;font-weight:700;color:var(--gold-strong)}
 .stat span{display:block;font-size:12px;opacity:.68;margin-top:3px}
 .card h3{font-size:15.5px;font-weight:700;margin-bottom:10px;color:var(--gold-strong)}
-.danger{width:100%;height:52px;border:1.5px solid var(--bar-line);border-radius:14px;
-  background:transparent;color:var(--bar-ink);cursor:pointer;
-  font-family:var(--font-ui);font-size:15px;font-weight:700;opacity:.8}
-
 /* ── صفحة المصحف المتجهة (SVG) ── */
 #page.svgmode{display:flex;align-items:center;justify-content:center;padding:4px}
 #page.svgmode svg{width:100%;height:100%;display:block}
@@ -803,8 +799,9 @@ function render(p){
 function setLabel(p){
   const ayat = PAGES.get(p) || [];
   const names = [...new Set(ayat.map(a => SURAS[a.sura]))];
-  labelEl.innerHTML = '<span class="cart">' + (names.length ? 'سورة ' + names.join(' · ') : '') +
-    '</span><span class="pg">' + arNum(p) + '</span>';
+  labelEl.innerHTML = '<span class="cart"><span class="nm">' +
+    (names.length ? 'سورة ' + names.join(' · ') : '') +
+    '</span><i class="sep"></i><span class="pg">' + arNum(p) + '</span></span>';
   syncMark(p);
 }
 
@@ -897,7 +894,9 @@ async function ayahImage(su, ay){
   const svg = pageEl.querySelector('svg');
   const poly = svg && svg.querySelector('.ayahPolygon[surah="' + su + '"][ayah="' + ay + '"]');
   if(!poly) return null;
-  const bb = poly.getBBox(), pad = 4;
+  // pad صغير: مضلّع الآية يقف عند حدّ السطر، وأي زيادة تُدخل حبر السطر
+  // المجاور فتظهر حروفٌ مقطوعة أعلى البطاقة وأسفلها
+  const bb = poly.getBBox(), pad = 1;
   const clone = svg.cloneNode(true);
   clone.setAttribute('viewBox',
     (bb.x - pad) + ' ' + (bb.y - pad) + ' ' + (bb.width + pad * 2) + ' ' + (bb.height + pad * 2));
@@ -950,7 +949,17 @@ async function ayahCard(su, ay){
 
   rosette(c, W / 2, M + 34, 22);
 
-  c.drawImage(img, M + 30, M + 92, inner, ih);
+  const iy = M + 92;
+  c.drawImage(img, M + 30, iy, inner, ih);
+  // تلاشٍ أعلى الصورة وأسفلها: ما بقي من حبر السطر المجاور يذوب في الورق
+  // بدل أن يظهر مبتوراً بحدٍّ حادّ
+  const fade = Math.min(30, ih * 0.14);
+  let g = c.createLinearGradient(0, iy, 0, iy + fade);
+  g.addColorStop(0, '#f7f2e6'); g.addColorStop(1, 'rgba(247,242,230,0)');
+  c.fillStyle = g; c.fillRect(M + 30, iy, inner, fade);
+  g = c.createLinearGradient(0, iy + ih - fade, 0, iy + ih);
+  g.addColorStop(0, 'rgba(247,242,230,0)'); g.addColorStop(1, '#f7f2e6');
+  c.fillStyle = g; c.fillRect(M + 30, iy + ih - fade, inner, fade);
 
   const ry = M + 92 + ih + 30;
   c.strokeStyle = 'rgba(184,145,47,.5)'; c.lineWidth = 2;
@@ -1167,10 +1176,7 @@ function renderTrack(){
             (C * pct / 100).toFixed(1) + ' ' + C.toFixed(1) + '"/>' : '') + '</svg>' +
         '<div class="prog-num">' + arNum(pct) + '٪</div>' +
       '</div>' +
-      '<div class="prog-sub">قرأتَ ' + arNum(done) + ' من ' + arNum(604) + ' صفحة</div>' +
-      '<div class="prog-today">' +
-        (sessionRead ? 'في هذه الجلسة ' + arNum(sessionRead) + ' · ' : '') +
-        'اليوم ' + arNum(todayN) + ' صفحة</div>' +
+      '<div class="prog-sub">' + arNum(done) + ' من ' + arNum(604) + ' صفحة</div>' +
     '</div>' +
 
     '<div class="card"><h3>العلامات المرجعية</h3>' +
@@ -1191,7 +1197,7 @@ function renderTrack(){
         : '<div class="hint" style="padding:8px 0">المس آيةً لتكتب حاشيتك عليها</div>') +
     '</div>' +
 
-    '<button class="danger" id="resetBtn">إعادة الختمة من الصفر</button>';
+    '';
 
   $('trackBody').querySelectorAll('[data-goto]').forEach(b =>
     b.addEventListener('click', () => { switchTab('paneMushaf'); goto(+b.dataset.goto); }));
@@ -1214,16 +1220,13 @@ function renderTrack(){
              (v ? v.page : '') + ']\n\n' + n[k] + '\n\n────────────\n';
     }).join('\n');
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([txt], { type:'text/plain;charset=utf-8' }));
+    // '\uFEFF' في أوّل الملف: بدونها تقرؤه عارضات أندرويد لاتينياً فيخرج طلاسم
+    a.href = URL.createObjectURL(new Blob(['\uFEFF' + txt], { type:'text/plain;charset=utf-8' }));
     a.download = 'حواشي-مصحف-شعبة.txt';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   });
 
-  $('resetBtn').addEventListener('click', () => {
-    if(!confirm('تُمحى الصفحات المقروءة ويبدأ العدّ من الصفر. أمتابع؟')) return;
-    TRACK.read = '0'.repeat(604); saveTrack(); renderTrack();
-  });
 }
 
 /* ══════════ الفهرس والبحث ══════════ */

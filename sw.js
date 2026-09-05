@@ -4,7 +4,7 @@
    صفحات المصحف ٦٥ ميغا فلا تُخزَّن دفعةً واحدة: كلّ صفحة تُقرأ تُحفظ،
    فيصير ما قرأه متاحاً دون إنترنت من غير أن نُثقل الجهاز من أوّل يوم. */
 
-const SHELL = 'shubah-shell-v1';
+const SHELL = 'shubah-shell-v2';
 const PAGES = 'shubah-pages-v1';
 
 const SHELL_FILES = [
@@ -55,7 +55,20 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // الهيكل: من المخزن أوّلاً، ونحدّثه في الخلفية
+  // صفحة التطبيق: من الشبكة أوّلاً والمخزن احتياطاً.
+  // «المخزن أوّلاً» كان يُبقي المستخدم على نسخةٍ قديمة حتى يفتح التطبيق
+  // مرّتين — يرى تحديث اليوم غداً. الفارق في الشبكة ملفٌّ واحد صغير.
+  if(req.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/'){
+    e.respondWith(
+      fetch(req).then(res => {
+        if(res.ok) caches.open(SHELL).then(c => c.put(req, res.clone()));
+        return res;
+      }).catch(() => caches.match(req).then(hit => hit || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // البقية (خطوط وبيانات وأيقونات): من المخزن أوّلاً وتُحدَّث في الخلفية
   e.respondWith(
     caches.match(req).then(hit => {
       const net = fetch(req).then(res => {
