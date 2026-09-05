@@ -1,0 +1,12 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+body{margin:0;background:#333;display:flex;justify-content:center}
+iframe{width:390px;height:844px;border:0;background:#fff}
+</style></head><body>
+<iframe id="f" src="index.html?page=3"></iframe>
+<script>
+setTimeout(()=>{
+  const w=document.getElementById('f').contentWindow;
+  const p=w.document.getElementById('page');
+  document.title='inner='+w.innerWidth+' page='+p.clientWidth+' FS='+p.style.fontSize;
+},2500);
+</script></body></html>

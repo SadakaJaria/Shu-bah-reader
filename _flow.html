@@ -10,8 +10,6 @@
 /* ══════════ الخطوط: محلّية بالكامل — يعمل التطبيق دون إنترنت ══════════
    Scheherazade New (SIL, رخصة OFL) لا Amiri Quran: الأخير لا يغطّي U+065E
    وهو يرد ١٨٠٧ مرّات في هذا النصّ، فكان يخرج مربّعات فارغة مكان العلامة. */
-@font-face{font-family:"Lateef";font-style:normal;font-weight:400;
-  font-display:swap;src:url(fonts/lateef-arabic-400.woff2) format("woff2")}
 @font-face{font-family:"Scheherazade New";font-style:normal;font-weight:400;
   font-display:swap;src:url(fonts/scheherazade-new-arabic-400.woff2) format("woff2")}
 @font-face{font-family:"IBM Plex Sans Arabic";font-style:normal;font-weight:400;
@@ -25,9 +23,7 @@
   --bar:#f3ede0; --bar-ink:#3a3120; --bar-line:rgba(169,130,46,.35);
   --gold:#c9a24b; --gold-strong:#8a6224;
   --font-ui:"IBM Plex Sans Arabic",system-ui,sans-serif;
-  /* Lateef مضغوط أفقياً: سطر المصحف يخرج ١٤٫٧em بدل ٢٣٫٢، فيتّسع الخطّ
-     أكبر بنحو ٥٧٪ في الصفحة الكاملة نفسها */
-  --font-quran:"Lateef","Scheherazade New","Noto Naskh Arabic","Geeza Pro",serif;
+  --font-quran:"Scheherazade New","Noto Naskh Arabic","Geeza Pro",serif;
 }
 @media (prefers-color-scheme:dark){
   :root{
@@ -46,15 +42,15 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 
 /* ── الشريط العلوي: اسم السورة ── */
 #top{flex:0 0 auto;z-index:10;
-  padding:calc(env(safe-area-inset-top) + 6px) 14px 6px;
+  padding:calc(env(safe-area-inset-top) + 11px) 14px 12px;
   background:var(--bar);border-bottom:1px solid var(--bar-line);
   box-shadow:0 6px 18px rgba(0,0,0,.12);
-  text-align:center;font-size:15px;font-weight:700;color:var(--gold-strong)}
+  text-align:center;font-size:17px;font-weight:700;color:var(--gold-strong)}
 
 /* ── الصفحة: خمسة عشر سطراً ── */
 #page{flex:1 1 auto;min-height:0;position:relative;
   display:flex;flex-direction:column;justify-content:center;
-  padding:5px 10px;
+  padding:18px 20px;
   font-family:var(--font-quran);color:var(--mushaf-ink);
   font-kerning:none;-webkit-font-smoothing:antialiased;
   opacity:1;transition:opacity .18s;
@@ -70,7 +66,7 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 /* السطر يُمطّ من الحافة إلى الحافة — كما في المصحف */
 .m-line{display:flex;justify-content:space-between;align-items:center;
   width:100%;white-space:nowrap;line-height:1;flex:0 0 auto;
-  gap:.14em}   /* أدنى فاصل بين الكلمات: بدونه تتلاصق في السطر الممتلئ */
+  gap:.22em}   /* أدنى فاصل بين الكلمات: بدونه تتلاصق في السطر الممتلئ */
 .m-line.center{justify-content:center}
 .m-w{display:inline-block}
 
@@ -90,20 +86,20 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 
 /* ── الشريط السفلي: سهمان ورقم الصفحة ── */
 #bot{flex:0 0 auto;z-index:10;display:flex;align-items:center;gap:12px;
-  padding:7px 12px calc(env(safe-area-inset-bottom) + 7px);
+  padding:10px 14px calc(env(safe-area-inset-bottom) + 10px);
   background:var(--bar);border-top:1px solid var(--bar-line);
   box-shadow:0 -6px 18px rgba(0,0,0,.12)}
-#bot button{flex:1;height:58px;min-width:0;
+#bot button{flex:1;height:70px;min-width:0;
   display:flex;align-items:center;justify-content:center;
   border:1.5px solid var(--bar-line);border-radius:18px;
   background:transparent;color:var(--gold-strong);cursor:pointer;
   transition:transform .12s,opacity .2s}
 #bot button:active{transform:scale(.96)}
 #bot button:disabled{opacity:.28;cursor:default}
-#bot button svg{width:32px;height:32px;fill:none;stroke:currentColor;
+#bot button svg{width:36px;height:36px;fill:none;stroke:currentColor;
   stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#pageNum{flex:0 0 auto;min-width:92px;text-align:center;
-  font-size:23px;font-weight:700;color:var(--bar-ink);line-height:1.2}
+#pageNum{flex:0 0 auto;min-width:100px;text-align:center;
+  font-size:25px;font-weight:700;color:var(--bar-ink);line-height:1.2}
 #pageNum small{display:block;font-size:11.5px;font-weight:400;opacity:.62;margin-top:2px}
 
 #msg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
@@ -137,7 +133,7 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 const CFG = {
   // 'mushaf' = أسطر مصحف المدينة كما هي (مطابقة للشكل، خطّ صغير على الهاتف)
   // 'flow'   = نصّ متدفّق داخل حدود الصفحة نفسها (خطّ كبير + تمرير)
-  LAYOUT    : 'mushaf',
+  LAYOUT    : 'flow',
   DATA      : 'quran-shubah.json',
   STORE_KEY : 'shubah:lastPage',
   REF       : 44           // حجم مرجعي للقياس
@@ -340,8 +336,7 @@ function buildPage(p){
 
 /* ══════════ أكبر خطّ يتّسع في الصفحة ══════════ */
 function autofit(){
-  const pcs = getComputedStyle(pageEl);
-  const avail = pageEl.clientWidth - parseFloat(pcs.paddingRight) - parseFloat(pcs.paddingLeft);
+  const avail = pageEl.clientWidth - 40;
   if(avail <= 0) return;
 
   if(CFG.LAYOUT === 'flow'){
@@ -373,14 +368,15 @@ function autofit(){
   // العرض المرسوم لكل سطر مقيسٌ عند بناء الصفحة (canvas)، لا من الـDOM:
   // scrollWidth لا يحسب الفيض عند حافة البدء في اتجاه RTL، فكان القياس
   // ناقصاً والحجم أكبر ممّا يتّسع، فتُقصّ أوّل كلمة من السطر.
-  const GAP = 0.14;   // الفاصل بين الكلمات بوحدة em (نفس قيمة gap في CSS)
+  const GAP = 0.22;   // الفاصل بين الكلمات بوحدة em (نفس قيمة gap في CSS)
   const nat = lines.map((l,i) => (currentRows[i] && currentRows[i].w) || 0);
   const gaps = lines.map((l,i) => Math.max(0, ((currentRows[i] && currentRows[i].items) || []).length - 1));
   // أوسع سطر: العرض دالّةٌ في الحجم = w·(size/REF) + GAP·size·(عدد الفواصل)
   const need = nat.map((w,i) => w / REF + GAP * gaps[i]);
   const maxNeed = Math.max(...need, 0.001);
 
-  const usableH = pageEl.clientHeight - parseFloat(pcs.paddingTop) - parseFloat(pcs.paddingBottom);
+  const cs = getComputedStyle(pageEl);
+  const usableH = pageEl.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
   // نقسم الارتفاع على أسطر الصفحة الفعلية لا على ١٥ دائماً: صفحتا الفاتحة
   // والبقرة الأوليان أقلّ أسطراً، فتخرجان بخطّ كبير كما في مصحف المدينة
   const slot = usableH / lines.length;
@@ -495,24 +491,6 @@ window.addEventListener('orientationchange', refit);
 if(window.visualViewport) window.visualViewport.addEventListener('resize', refit);
 
 /* ══════════ البداية ══════════ */
-// نُجبر تحميل خطوط الصفحة قبل أوّل قياس. document.fonts.ready وحده لا يكفي:
-// إن لم يكن الخطّ قد بدأ التحميل يُحلّ فوراً، فيقاس عرض السطر بمقاييس خطّ
-// بديل ويخرج الحجم خاطئاً في أوّل صفحة تُفتح.
-async function preloadFonts(){
-  if(!document.fonts || !document.fonts.load) return;
-  const fam = getComputedStyle(pageEl).fontFamily.split(',')[0].trim().replace(/^["']|["']$/g,'');
-  const jobs = [
-    document.fonts.load('44px "' + fam + '"', 'بِسۡمِ ٱللَّهِ'),
-    document.fonts.load('700 16px "IBM Plex Sans Arabic"', 'سورة ٠١٢')
-  ];
-  try{
-    await Promise.race([
-      Promise.allSettled(jobs),
-      new Promise(r => setTimeout(r, 4000))   // صمّام أمان: لا ننتظر إلى الأبد
-    ]);
-  }catch(_){}
-}
-
 (async function start(){
   try{
     await loadQuran();
@@ -523,7 +501,6 @@ async function preloadFonts(){
   // ?page=٢٥٥ يفتح صفحة بعينها (للفحص والروابط)، وإلّا فآخر صفحة محفوظة
   let p = parseInt(new URLSearchParams(location.search).get('page')) || 0;
   if(!p){ try{ p = parseInt(localStorage.getItem(CFG.STORE_KEY)) || 1; }catch(_){ p = 1; } }
-  await preloadFonts();
   msgEl.classList.remove('show');
   render(Math.max(1, Math.min(TOTAL, p)));
 })();
