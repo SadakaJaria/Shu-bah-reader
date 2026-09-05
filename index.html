@@ -6,18 +6,24 @@
 <meta name="theme-color" content="#f3ede0" media="(prefers-color-scheme: light)"/>
 <meta name="theme-color" content="#0a1712" media="(prefers-color-scheme: dark)"/>
 <title>مصحف شعبة</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
+/* ══════════ الخطوط: محلّية بالكامل — يعمل التطبيق دون إنترنت ══════════
+   Scheherazade New (SIL, رخصة OFL) لا Amiri Quran: الأخير لا يغطّي U+065E
+   وهو يرد ١٨٠٧ مرّات في هذا النصّ، فكان يخرج مربّعات فارغة مكان العلامة. */
+@font-face{font-family:"Scheherazade New";font-style:normal;font-weight:400;
+  font-display:swap;src:url(fonts/scheherazade-new-arabic-400.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Sans Arabic";font-style:normal;font-weight:400;
+  font-display:swap;src:url(fonts/ibm-plex-sans-arabic-400.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Sans Arabic";font-style:normal;font-weight:700;
+  font-display:swap;src:url(fonts/ibm-plex-sans-arabic-700.woff2) format("woff2")}
+
 /* ══════════ هوية «صدقة جارية» ══════════ */
 :root{
   --mushaf-bg:#f7f2e6; --mushaf-ink:#181410; --mushaf-shade:rgba(120,95,30,.05);
   --bar:#f3ede0; --bar-ink:#3a3120; --bar-line:rgba(169,130,46,.35);
   --gold:#c9a24b; --gold-strong:#8a6224;
   --font-ui:"IBM Plex Sans Arabic",system-ui,sans-serif;
-  /* لو تعذّر تحميل Amiri Quran (بلا إنترنت) تتولّى خطوط النظام العربية */
-  --font-quran:"Amiri Quran","Noto Naskh Arabic","Geeza Pro","Traditional Arabic",serif;
+  --font-quran:"Scheherazade New","Noto Naskh Arabic","Geeza Pro",serif;
 }
 @media (prefers-color-scheme:dark){
   :root{
@@ -70,7 +76,7 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 /* رقم الآية */
 .num{display:inline-block;min-width:1.5em;height:1.5em;line-height:1.5em;
   margin:0 .1em;border:1.5px solid var(--gold);border-radius:50%;
-  color:var(--gold-strong);font-family:var(--font-ui);font-size:.4em;font-weight:600;
+  color:var(--gold-strong);font-family:var(--font-ui);font-size:.4em;font-weight:700;
   text-align:center;vertical-align:middle}
 
 /* ── الشريط السفلي: سهمان ورقم الصفحة ── */
@@ -306,7 +312,22 @@ function autofit(){
   // والبقرة الأوليان أقلّ أسطراً، فتخرجان بخطّ كبير كما في مصحف المدينة
   const slot = usableH / lines.length;
   const sizeW = Math.max(12, avail / maxNeed * 0.985);      // هامش أمان ١٫٥٪
-  const sizeH = slot / 1.62;                                // ارتفاع السطر مع الحركات
+
+  // الحدّ الذي يفرضه الارتفاع: نقيس أعلى «حبر» مرسوم فعلياً في أي سطر
+  // (بما فيه الحركات وعلامات الوقف) بدل ثابتٍ مقدّر، فيتبع الحجمُ الخطَّ
+  // المستعمل مهما كان بدل أن نترك فراغاً لا داعي له.
+  let maxInk = 0;
+  try{
+    const ictx = autofit._ctx || (autofit._ctx = document.createElement('canvas').getContext('2d'));
+    ictx.font = REF + 'px ' + getComputedStyle(pageEl).fontFamily;
+    lines.forEach(l => {
+      if(l.classList.contains('head')) return;
+      const m = ictx.measureText(l.textContent);
+      const ink = (m.actualBoundingBoxAscent || 0) + (m.actualBoundingBoxDescent || 0);
+      if(ink > maxInk) maxInk = ink;
+    });
+  }catch(_){}
+  const sizeH = maxInk > 0 ? REF * (slot * 1.02) / maxInk : slot / 1.62;
 
   // شاشة قصيرة أو أفقية: أكبر خط ممكن + تمرير عمودي (أوضح لكبار السن)
   const shortH = (window.matchMedia && window.matchMedia('(orientation: landscape)').matches)
