@@ -299,6 +299,32 @@ body.immersive #tabs{display:none}
 #page.svgmode .ayahPolygon.flash{fill:var(--gold);
   animation:ayahflash 2.4s ease-in-out 1}
 
+/* ── شريط التلاوة ── */
+#playbar{flex:0 0 auto;z-index:22;display:flex;align-items:center;gap:8px;
+  padding:6px 10px;background:var(--bar);border-top:1.5px solid var(--gold)}
+#playbar button{flex:0 0 auto;width:44px;height:40px;
+  display:flex;align-items:center;justify-content:center;
+  border:none;background:transparent;color:var(--gold-strong);
+  cursor:pointer;border-radius:12px}
+#playbar button:active{transform:scale(.92)}
+#playbar button svg{width:26px;height:26px;fill:none;stroke:currentColor;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#pbToggle svg path{fill:currentColor;stroke:none}
+.pb-mid{flex:1;min-width:0}
+.pb-mid b{display:block;font-family:var(--font-ui);font-size:13px;font-weight:700;
+  color:var(--bar-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pbTime{flex:0 0 auto;font-family:var(--font-ui);font-size:12px;
+  color:var(--bar-ink);opacity:.6;min-width:40px;text-align:center}
+#pbSeek{-webkit-appearance:none;appearance:none;width:100%;height:20px;
+  background:transparent;margin-top:1px;cursor:pointer}
+#pbSeek::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--bar-line)}
+#pbSeek::-moz-range-track{height:4px;border-radius:2px;background:var(--bar-line)}
+#pbSeek::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:15px;height:15px;border-radius:50%;background:var(--gold);border:none;margin-top:-5.5px}
+#pbSeek::-moz-range-thumb{width:15px;height:15px;border-radius:50%;
+  background:var(--gold);border:none}
+body.immersive #playbar{display:none}
+
 #msg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
   padding:32px;text-align:center;font-size:19px;line-height:1.9;
   color:var(--mushaf-ink);background:var(--mushaf-bg);z-index:50}
@@ -316,11 +342,25 @@ body.immersive #tabs{display:none}
           <svg id="themeIcon" viewBox="0 0 24 24"></svg>
         </button>
         <div id="label"></div>
+        <button id="listenBtn" aria-label="الاستماع">
+          <svg viewBox="0 0 24 24"><path d="M4 9v6h3.5L12 19V5L7.5 9zM16 9.5a3.5 3.5 0 0 1 0 5M18.5 7a7 7 0 0 1 0 10"/></svg>
+        </button>
         <button id="markBtn" aria-label="علامة مرجعية">
           <svg id="markIcon" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>
         </button>
       </div>
       <div id="page"></div>
+      <div id="playbar" hidden>
+        <button id="pbToggle" aria-label="تشغيل وإيقاف"></button>
+        <div class="pb-mid">
+          <b id="pbName"></b>
+          <input id="pbSeek" type="range" min="0" max="1000" value="0" aria-label="موضع التلاوة"/>
+        </div>
+        <span id="pbTime">٠:٠٠</span>
+        <button id="pbClose" aria-label="إنهاء الاستماع">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
     </section>
 
     <section class="pane" id="paneTrack">
@@ -406,7 +446,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-05b',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-05c',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -1378,6 +1418,131 @@ function renderTrack(){
   });
 
 }
+
+/* ══════════ الاستماع — رواية شعبة وحدها ══════════ */
+/* قارئٌ واحد أعطانا رابطه صاحب البرنامج من mp3quran، ومسار الملفّ نفسه
+   يصرّح بالرواية: ‎/Rewayat-Sho-bah-A-n-Asim/‎. لا نُدرج قارئاً استنتاجاً
+   من اسمه: صابر عبد الحكم سجّل بحفص وقالون أيضاً، ومسارات تلك غير هذا.
+   لإضافة قارئٍ آخر لاحقاً: سطرٌ في هذه القائمة، ورابطه من المصدر نفسه. */
+const RECITERS = [
+  { id   : 'sabdulhakam',
+    name : 'صابر عبد الحكم',
+    style: 'مرتّل',
+    base : 'https://server16.mp3quran.net/The-ten-readings/Rewayat-Sho-bah-A-n-Asim/Sabdulhakam' },
+];
+const AUD_KEY = 'shubah:reciter';
+let curRec = null, curSura = 0, autoNext = false, seeking = false;
+const audio = new Audio();
+audio.preload = 'none';
+
+// أرقام سور mp3quran بثلاث خانات: 001.mp3 … 114.mp3
+const audioUrl = (rec, sura) => rec.base + '/' + String(sura).padStart(3, '0') + '.mp3';
+
+function pickedReciter(){
+  let saved = null;
+  try{ saved = localStorage.getItem(AUD_KEY); }catch(_){}
+  return RECITERS.find(r => r.id === saved) || RECITERS[0];
+}
+
+/* السورة المقصودة من صفحةٍ ما: أوّل سورة فيها.
+   يفتح أبوك الصفحة ويضغط الزرّ فيسمع سورتها، بلا اختيارٍ إضافي. */
+function suraOfPage(p){
+  const ayat = PAGES.get(p) || [];
+  return ayat.length ? ayat[0].sura : 1;
+}
+
+function mmss(t){
+  if(!isFinite(t) || t < 0) t = 0;
+  return arNum(Math.floor(t / 60)) + ':' + arNum(Math.floor(t % 60)).padStart(2, '٠');
+}
+
+const ICON_PLAY  = '<svg viewBox="0 0 24 24"><path d="M7 5v14l12-7z"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>';
+const setPlayIcon = on => { $('pbToggle').innerHTML = on ? ICON_PAUSE : ICON_PLAY; };
+
+function playSura(rec, sura, auto){
+  if(!rec || sura < 1 || sura > 114) return;
+  curRec = rec; curSura = sura; autoNext = !!auto;
+  try{ localStorage.setItem(AUD_KEY, rec.id); }catch(_){}
+  audio.src = audioUrl(rec, sura);
+  audio.play().catch(() => {});
+  $('pbName').textContent = 'سورة ' + SURAS[sura] + ' · ' + rec.name;
+  $('pbTime').textContent = '٠:٠٠';
+  $('pbSeek').value = 0;
+  $('playbar').hidden = false;
+  setPlayIcon(true);
+  mediaSession(rec, sura);
+}
+
+function stopAudio(){
+  audio.pause();
+  audio.removeAttribute('src');
+  try{ audio.load(); }catch(_){}
+  curSura = 0;
+  $('playbar').hidden = true;
+}
+
+/* اسم السورة والقارئ على شاشة القفل مع أزرارها — أبٌ يقفل الشاشة
+   ويستمع لا ينبغي أن يفتح التطبيق ليوقف التلاوة. */
+function mediaSession(rec, sura){
+  if(!('mediaSession' in navigator)) return;
+  try{
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title  : 'سورة ' + SURAS[sura],
+      artist : rec.name + ' · رواية شعبة عن عاصم',
+      album  : 'مصحف شعبة',
+      artwork: [{src:'icons/icon-192.png', sizes:'192x192', type:'image/png'},
+                {src:'icons/icon-512.png', sizes:'512x512', type:'image/png'}]
+    });
+    const jump = d => { const n = curSura + d; if(n >= 1 && n <= 114) playSura(rec, n); };
+    navigator.mediaSession.setActionHandler('play',          () => audio.play().catch(() => {}));
+    navigator.mediaSession.setActionHandler('pause',         () => audio.pause());
+    navigator.mediaSession.setActionHandler('stop',          stopAudio);
+    navigator.mediaSession.setActionHandler('nexttrack',     () => jump(1));
+    navigator.mediaSession.setActionHandler('previoustrack', () => jump(-1));
+  }catch(_){}
+}
+
+audio.addEventListener('play',  () => setPlayIcon(true));
+audio.addEventListener('pause', () => setPlayIcon(false));
+audio.addEventListener('timeupdate', () => {
+  if(seeking || !audio.duration) return;
+  $('pbSeek').value = Math.round(audio.currentTime / audio.duration * 1000);
+  $('pbTime').textContent = mmss(audio.currentTime);
+});
+// انتهت السورة: نُتبعها بالتي بعدها — تلاوةٌ متّصلة بلا لمس
+audio.addEventListener('ended', () => {
+  if(curRec && curSura < 114) playSura(curRec, curSura + 1, true);
+  else stopAudio();
+});
+// تعذّر الصوت: ننهي بنظافة بدل شريطٍ يقول «يقرأ» ولا صوت.
+// وإن كان في سورةٍ انتقلنا إليها من تلقائنا فالإنهاء صامت — لم يطلبها.
+audio.addEventListener('error', () => {
+  if(!audio.getAttribute('src')) return;
+  const silent = autoNext;
+  stopAudio();
+  if(!silent) toast('تعذّر تشغيل الصوت — تحقّق من الاتصال');
+});
+
+$('pbSeek').addEventListener('input',  () => { seeking = true; });
+$('pbSeek').addEventListener('change', () => {
+  if(audio.duration) audio.currentTime = $('pbSeek').value / 1000 * audio.duration;
+  seeking = false;
+});
+$('pbToggle').addEventListener('click', () => {
+  if(audio.paused) audio.play().catch(() => {}); else audio.pause();
+});
+$('pbClose').addEventListener('click', stopAudio);
+
+$('listenBtn').addEventListener('click', () => {
+  const sura = suraOfPage(current);
+  // نفس السورة تعمل: الزرّ يوقف ويستأنف بدل أن يُعيدها من أوّلها
+  if(curSura === sura && audio.getAttribute('src')){
+    if(audio.paused) audio.play().catch(() => {}); else audio.pause();
+    return;
+  }
+  playSura(pickedReciter(), sura);
+});
 
 /* ══════════ الفروق بين روايتي شعبة وحفص ══════════ */
 /* البيانات كلّها من جدول الفروق الذي زوّدنا به صاحب البرنامج (nquran.com).
