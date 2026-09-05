@@ -160,16 +160,15 @@ body.immersive #tabs{display:none}
 /* ── لوح المتابعة ── */
 .card{border:1px solid var(--bar-line);border-radius:18px;padding:16px;
   margin-bottom:12px;background:var(--bar);color:var(--bar-ink)}
-.ring-wrap{display:flex;align-items:center;gap:16px}
-.ring{flex:0 0 auto;width:104px;height:104px;transform:rotate(-90deg)}
-.ring circle{fill:none;stroke-width:11;stroke-linecap:round}
-.ring .bg{stroke:var(--bar-line)}
-.ring .fg{stroke:var(--gold);transition:stroke-dasharray .5s ease}
-.ring-txt{flex:1;min-width:0}
-.ring-txt .pct{font-size:34px;font-weight:700;color:var(--gold-strong);line-height:1.1}
-.ring-txt .sub{font-size:14px;opacity:.72;margin-top:4px;line-height:1.7}
-.bar{height:12px;border-radius:8px;background:var(--bar-line);overflow:hidden;margin:12px 0 8px}
-.bar i{display:block;height:100%;background:var(--gold);border-radius:8px;transition:width .4s}
+.prog{position:relative;width:158px;height:158px;margin:2px auto 14px}
+.prog .ring{width:100%;height:100%;transform:rotate(-90deg)}
+.prog .ring circle{fill:none;stroke-width:10;stroke-linecap:round}
+.prog .ring .bg{stroke:var(--bar-line)}
+.prog .ring .fg{stroke:var(--gold);transition:stroke-dasharray .6s ease}
+.prog-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:40px;font-weight:700;color:var(--gold-strong);letter-spacing:-1px}
+.prog-sub{text-align:center;font-size:16px;line-height:1.8}
+.prog-today{text-align:center;font-size:14px;opacity:.66;margin-top:6px}
 .stats{display:flex;gap:10px}
 .stat{flex:1;text-align:center;border:1px solid var(--bar-line);border-radius:14px;padding:12px 6px}
 .stat b{display:block;font-size:26px;font-weight:700;color:var(--gold-strong)}
@@ -188,6 +187,9 @@ body.immersive #tabs{display:none}
 #page.svgmode .ayahPolygon{cursor:pointer;pointer-events:all}
 
 /* ── لوح الآية (بضغطة مطوّلة) ── */
+#backdrop{position:fixed;inset:0;z-index:75;background:rgba(0,0,0,.35);
+  opacity:0;pointer-events:none;transition:opacity .22s}
+#backdrop.show{opacity:1;pointer-events:auto}
 #asheet{position:fixed;left:0;right:0;bottom:0;z-index:80;
   background:var(--bar);border-top:1.5px solid var(--gold);
   border-radius:20px 20px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.28);
@@ -309,6 +311,7 @@ body.immersive #tabs{display:none}
   </nav>
 </div>
 
+<div id="backdrop"></div>
 <div id="asheet">
   <div class="ash-head">
     <b id="ashTitle"></b>
@@ -318,7 +321,7 @@ body.immersive #tabs{display:none}
   <div class="ash-acts">
     <button id="ashCopy">نسخ الآية</button>
     <button id="ashCopyRef">نسخ مع المرجع</button>
-    <button id="ashImg">صورة الآية</button>
+    <button id="ashShare">مشاركة الآية</button>
     <button id="ashNote">حاشية</button>
   </div>
   <textarea id="ashNoteBox" placeholder="اكتب حاشيتك على هذه الآية…" hidden></textarea>
@@ -848,8 +851,13 @@ function openAyah(su, ay){
   $('ashSaveNote').hidden = true;
   $('ashNote').textContent = notes[ashKey] ? 'تعديل الحاشية' : 'حاشية';
   $('asheet').classList.add('show');
+  $('backdrop').classList.add('show');
 }
-const closeAyah = () => $('asheet').classList.remove('show');
+function closeAyah(){
+  $('asheet').classList.remove('show');
+  $('backdrop').classList.remove('show');
+}
+$('backdrop').addEventListener('click', closeAyah);
 $('ashClose').addEventListener('click', closeAyah);
 
 function toast(t){
@@ -882,87 +890,116 @@ $('ashSaveNote').addEventListener('click', () => {
   if(currentTab === 'paneTrack') renderTrack();
 });
 
-/* صورة الآية: نقصّ رسم الصفحة عند حدود مضلّعها، فتخرج الآية بخطّ
-   المصحف المطبوع نفسه لا بخطّ نصّي. */
-$('ashImg').addEventListener('click', async () => {
-  const [su, ay] = ashKey.split(':').map(Number);
+/* بطاقة الآية للمشاركة: نقصّ الآية من رسم الصفحة المطبوعة، ثمّ نضعها
+   في إطارٍ ذهبي مع مرجعها وتوقيع التطبيق. الورق فاتحٌ دائماً ولو كان
+   التطبيق ليلياً — البطاقة تُرسَل إلى غيره لا تُقرأ في الظلام. */
+async function ayahImage(su, ay){
   const svg = pageEl.querySelector('svg');
   const poly = svg && svg.querySelector('.ayahPolygon[surah="' + su + '"][ayah="' + ay + '"]');
-  if(!poly){ toast('الآية ليست في هذه الصفحة'); return; }
-  try{
-    const bb = poly.getBBox(), pad = 5;
-    const cs = getComputedStyle(document.documentElement);
-    const ink = cs.getPropertyValue('--mushaf-ink').trim() || '#181410';
-    const paper = cs.getPropertyValue('--mushaf-bg').trim() || '#f7f2e6';
-    const clone = svg.cloneNode(true);
-    clone.setAttribute('viewBox',
-      (bb.x - pad) + ' ' + (bb.y - pad) + ' ' + (bb.width + pad * 2) + ' ' + (bb.height + pad * 2));
-    // اللون يأتي من CSS، ولا CSS في ملفٍّ مستقلّ: نثبّته على النسخة
-    clone.querySelectorAll('[fill="#231f20"]').forEach(e => e.setAttribute('fill', ink));
-    clone.querySelectorAll('.ayahPolygon').forEach(e => e.remove());
-    const NS = 'http://www.w3.org/2000/svg';
-    const bg = document.createElementNS(NS, 'rect');
-    bg.setAttribute('x', bb.x - pad); bg.setAttribute('y', bb.y - pad);
-    bg.setAttribute('width', bb.width + pad * 2); bg.setAttribute('height', bb.height + pad * 2);
-    bg.setAttribute('fill', paper);
-    clone.insertBefore(bg, clone.firstChild);
-
-    const scale = 4;
-    const w = Math.round((bb.width + pad * 2) * scale), h = Math.round((bb.height + pad * 2) * scale);
-    clone.setAttribute('width', w); clone.setAttribute('height', h);
-    const src = 'data:image/svg+xml;charset=utf-8,' +
+  if(!poly) return null;
+  const bb = poly.getBBox(), pad = 4;
+  const clone = svg.cloneNode(true);
+  clone.setAttribute('viewBox',
+    (bb.x - pad) + ' ' + (bb.y - pad) + ' ' + (bb.width + pad * 2) + ' ' + (bb.height + pad * 2));
+  clone.querySelectorAll('.ayahPolygon').forEach(e => e.remove());
+  // اللون يأتي من CSS ولا CSS في ملفٍّ مستقلّ، فيُثبَّت على النسخة
+  clone.querySelectorAll('[fill="#231f20"]').forEach(e => e.setAttribute('fill', '#1a140d'));
+  const k = 4;
+  const w = Math.round((bb.width + pad * 2) * k), h = Math.round((bb.height + pad * 2) * k);
+  clone.setAttribute('width', w); clone.setAttribute('height', h);
+  const img = new Image();
+  await new Promise((res, rej) => {
+    img.onload = res; img.onerror = rej;
+    img.src = 'data:image/svg+xml;charset=utf-8,' +
       encodeURIComponent(new XMLSerializer().serializeToString(clone));
-    const img = new Image();
-    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = src; });
-    const cv = document.createElement('canvas');
-    cv.width = w; cv.height = h;
-    cv.getContext('2d').drawImage(img, 0, 0, w, h);
-    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
-    const name = 'ayah-' + su + '-' + ay + '.png';
-    const file = new File([blob], name, { type:'image/png' });
-    if(navigator.canShare && navigator.canShare({ files:[file] })){
-      await navigator.share({ files:[file] });
-    }else{
+  });
+  return img;
+}
+
+function rosette(ctx, cx, cy, r){
+  ctx.strokeStyle = '#b8912f'; ctx.fillStyle = '#c9a24b';
+  ctx.lineWidth = r * 0.14;
+  ctx.beginPath(); ctx.arc(cx, cy, r * 0.62, 0, 7); ctx.stroke();
+  for(let a = 0; a < 360; a += 45){
+    const t = a * Math.PI / 180;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(t) * r, cy + Math.sin(t) * r, r * 0.12, 0, 7);
+    ctx.fill();
+  }
+  ctx.beginPath(); ctx.arc(cx, cy, r * 0.14, 0, 7); ctx.fill();
+}
+
+async function ayahCard(su, ay){
+  const img = await ayahImage(su, ay);
+  if(!img) return null;
+  try{ await document.fonts.load('700 44px "IBM Plex Sans Arabic"'); }catch(_){}
+
+  const W = 1080, M = 64, inner = W - M * 2 - 60;
+  const ih = Math.round(img.height * (inner / img.width));
+  const H = M + 92 + ih + 54 + 70 + 56 + M;
+
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const c = cv.getContext('2d');
+
+  c.fillStyle = '#f7f2e6'; c.fillRect(0, 0, W, H);
+  c.strokeStyle = '#b8912f'; c.lineWidth = 4;
+  c.strokeRect(M / 2, M / 2, W - M, H - M);
+  c.strokeStyle = 'rgba(184,145,47,.45)'; c.lineWidth = 1.5;
+  c.strokeRect(M / 2 + 11, M / 2 + 11, W - M - 22, H - M - 22);
+
+  rosette(c, W / 2, M + 34, 22);
+
+  c.drawImage(img, M + 30, M + 92, inner, ih);
+
+  const ry = M + 92 + ih + 30;
+  c.strokeStyle = 'rgba(184,145,47,.5)'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(W * 0.3, ry); c.lineTo(W * 0.7, ry); c.stroke();
+
+  c.direction = 'rtl'; c.textAlign = 'center';
+  c.fillStyle = '#8a6224';
+  c.font = '700 42px "IBM Plex Sans Arabic", sans-serif';
+  c.fillText('سورة ' + SURAS[su] + ' · الآية ' + arNum(ay), W / 2, ry + 60);
+  c.fillStyle = 'rgba(58,49,32,.5)';
+  c.font = '400 28px "IBM Plex Sans Arabic", sans-serif';
+  c.fillText('مصحف شعبة', W / 2, ry + 112);
+
+  return new Promise(r => cv.toBlob(r, 'image/png'));
+}
+
+$('ashShare').addEventListener('click', async () => {
+  const [su, ay] = ashKey.split(':').map(Number);
+  const v = verseOf(su, ay);
+  const text = '﴿' + v.text + '﴾\n[' + SURAS[su] + ': ' + ay + ']';
+  try{
+    const blob = await ayahCard(su, ay);
+    if(blob){
+      const file = new File([blob], 'ayah-' + su + '-' + ay + '.png', { type:'image/png' });
+      if(navigator.canShare && navigator.canShare({ files:[file] })){
+        await navigator.share({ files:[file], text:text });
+        return;
+      }
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob); a.download = name; a.click();
+      a.href = URL.createObjectURL(blob);
+      a.download = 'ayah-' + su + '-' + ay + '.png';
+      a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-      toast('حُفظت الصورة');
+      toast('حُفظت البطاقة');
+      return;
     }
-  }catch(e){ toast('تعذّر إخراج الصورة'); }
+    if(navigator.share){ await navigator.share({ text:text }); return; }
+    copyText(text);
+  }catch(e){
+    if(e && e.name === 'AbortError') return;      // ألغى المشاركة
+    copyText(text);
+  }
 });
 
-// ضغطة مطوّلة على آية
-let lpTimer = null, lpMoved = 0, lpX = 0, lpY = 0;
-const clearLP = () => { clearTimeout(lpTimer); lpTimer = null; };
 function ayahAt(target){
   return target && target.closest && target.closest('.ayahPolygon');
 }
-pageEl.addEventListener('touchstart', e => {
-  const el = ayahAt(e.target);
-  if(!el) return;
-  const c = e.changedTouches[0];
-  lpX = c.clientX; lpY = c.clientY; lpMoved = 0;
-  clearLP();
-  lpTimer = setTimeout(() => {
-    lpTimer = null;
-    if(navigator.vibrate){ try{ navigator.vibrate(12); }catch(_){} }
-    lpFired = true;
-    openAyah(+el.getAttribute('surah'), +el.getAttribute('ayah'));
-  }, 500);
-}, {passive:true});
-pageEl.addEventListener('touchmove', e => {
-  if(!lpTimer) return;
-  const c = e.changedTouches[0];
-  if(Math.hypot(c.clientX - lpX, c.clientY - lpY) > 8) clearLP();
-}, {passive:true});
-pageEl.addEventListener('touchend', () => { if(lpTimer) clearLP(); }, {passive:true});
-// سطح المكتب: زرّ الفأرة الأيمن
-pageEl.addEventListener('contextmenu', e => {
-  const el = ayahAt(e.target);
-  if(!el) return;
-  e.preventDefault();
-  openAyah(+el.getAttribute('surah'), +el.getAttribute('ayah'));
-});
+
+
 
 function goto(n){
   const p = Math.max(1, Math.min(TOTAL, n));
@@ -993,7 +1030,7 @@ function toggleImmersive(){
   requestAnimationFrame(() => { curEm = null; buildPage(current); autofit(); });
 }
 
-let sx = 0, sy = 0, moved = 0, tracking = false, lpFired = false;
+let sx = 0, sy = 0, moved = 0, tracking = false;
 pageEl.addEventListener('touchstart', e => {
   const c = e.changedTouches[0];
   sx = c.clientX; sy = c.clientY; moved = 0; tracking = true;
@@ -1011,13 +1048,19 @@ pageEl.addEventListener('touchend', e => {
   if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60){
     if(dx > 0) nextPage(); else prevPage();   // اتجاه تقليب المصحف
   }else if(moved < 12){
-    if($('asheet').classList.contains('show')){ closeAyah(); return; }
-    if(lpFired){ lpFired = false; return; }
-    toggleImmersive();
+    // لمسةٌ على آية تفتح لوحها، وعلى هامش الصفحة تُبدّل ملء الشاشة
+    const el = ayahAt(e.target);
+    if(el) openAyah(+el.getAttribute('surah'), +el.getAttribute('ayah'));
+    else toggleImmersive();
   }
 });
-// الفأرة (سطح المكتب): نقرة = ملء الشاشة
-pageEl.addEventListener('click', () => { if(!('ontouchstart' in window)) toggleImmersive(); });
+// الفأرة (سطح المكتب): نقرة على آية تفتحها، وعلى الهامش ملء الشاشة
+pageEl.addEventListener('click', e => {
+  if('ontouchstart' in window) return;
+  const el = ayahAt(e.target);
+  if(el) openAyah(+el.getAttribute('surah'), +el.getAttribute('ayah'));
+  else toggleImmersive();
+});
 
 document.addEventListener('keydown', e => {
   if(e.key === 'ArrowLeft') nextPage();
@@ -1103,7 +1146,7 @@ function streakDays(){
 function renderTrack(){
   const done = readCount(), pct = Math.round(done / 604 * 100);
   const todayN = TRACK.days[dayKey(new Date())] || 0;
-  const C = 2 * Math.PI * 44;
+  const C = 2 * Math.PI * 52;
 
   const notes = loadNotes(), nk = Object.keys(notes);
   const marks = loadMarks();
@@ -1112,24 +1155,23 @@ function renderTrack(){
     const v = verseOf(+k.split(':')[0], +k.split(':')[1]);
     return v ? v.page : 1;
   };
+  const esc = t => t.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
 
   $('trackBody').innerHTML =
-    '<div class="card"><div class="ring-wrap">' +
-      '<svg class="ring" viewBox="0 0 104 104">' +
-        '<circle class="bg" cx="52" cy="52" r="44"/>' +
-        '<circle class="fg" cx="52" cy="52" r="44" stroke-dasharray="' +
-          (C * pct / 100).toFixed(1) + ' ' + C.toFixed(1) + '"/></svg>' +
-      '<div class="ring-txt"><div class="pct">' + arNum(pct) + '٪</div>' +
-        '<div class="sub">' + arNum(done) + ' من ' + arNum(604) + ' صفحة' +
-        (done < 604 ? '<br>بقي ' + arNum(604 - done) + ' صفحة' : '<br>تمّت الختمة') +
-        '</div></div></div></div>' +
-
-    '<div class="card"><div class="stats">' +
-      '<div class="stat"><b>' + arNum(sessionRead) + '</b><span>في هذه الجلسة</span></div>' +
-      '<div class="stat"><b>' + arNum(todayN) + '</b><span>اليوم</span></div>' +
-      '<div class="stat"><b>' + arNum(streakDays()) + '</b><span>يوماً متتابعاً</span></div>' +
-      '<div class="stat"><b>' + arNum(TRACK.khatmas) + '</b><span>ختمة كاملة</span></div>' +
-    '</div></div>' +
+    '<div class="card">' +
+      '<div class="prog">' +
+        '<svg class="ring" viewBox="0 0 120 120">' +
+          '<circle class="bg" cx="60" cy="60" r="52"/>' +
+          // عند الصفر لا نرسم القوس: طرفه المستدير يترك نقطةً شاردة
+          (pct > 0 ? '<circle class="fg" cx="60" cy="60" r="52" stroke-dasharray="' +
+            (C * pct / 100).toFixed(1) + ' ' + C.toFixed(1) + '"/>' : '') + '</svg>' +
+        '<div class="prog-num">' + arNum(pct) + '٪</div>' +
+      '</div>' +
+      '<div class="prog-sub">قرأتَ ' + arNum(done) + ' من ' + arNum(604) + ' صفحة</div>' +
+      '<div class="prog-today">' +
+        (sessionRead ? 'في هذه الجلسة ' + arNum(sessionRead) + ' · ' : '') +
+        'اليوم ' + arNum(todayN) + ' صفحة</div>' +
+    '</div>' +
 
     '<div class="card"><h3>العلامات المرجعية</h3>' +
       (marks.length
@@ -1144,10 +1186,9 @@ function renderTrack(){
         ? nk.map(k => '<div class="note"><div class="nh"><b>' + suraOf(k) + '</b>' +
             '<button data-goto="' + pageOfKey(k) + '" title="فتح">←</button>' +
             '<button data-delnote="' + k + '" title="حذف">×</button></div>' +
-            '<p>' + notes[k].replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) +
-            '</p></div>').join('') +
+            '<p>' + esc(notes[k]) + '</p></div>').join('') +
           '<button class="ghost" id="expNotes">تصدير الحواشي ملفّاً</button>'
-        : '<div class="hint" style="padding:8px 0">اضغط مطوّلاً على آية لتكتب حاشيتك عليها</div>') +
+        : '<div class="hint" style="padding:8px 0">المس آيةً لتكتب حاشيتك عليها</div>') +
     '</div>' +
 
     '<button class="danger" id="resetBtn">إعادة الختمة من الصفر</button>';
