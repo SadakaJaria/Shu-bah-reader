@@ -4,13 +4,14 @@
    صفحات المصحف ٦٥ ميغا فلا تُخزَّن دفعةً واحدة: كلّ صفحة تُقرأ تُحفظ،
    فيصير ما قرأه متاحاً دون إنترنت من غير أن نُثقل الجهاز من أوّل يوم. */
 
-const SHELL = 'shubah-shell-v2';
+const SHELL = 'shubah-shell-v3';
 const PAGES = 'shubah-pages-v1';
 
 const SHELL_FILES = [
   './',
   './index.html',
   './quran-shubah.json',
+  './diffs-shubah.json',
   './manifest.json',
   './fonts/lateef-arabic-400.woff2',
   './fonts/ibm-plex-sans-arabic-400.woff2',

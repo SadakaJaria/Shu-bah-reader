@@ -196,6 +196,14 @@ body.immersive #tabs{display:none}
 .ash-head b{flex:1;font-size:16px;font-weight:700;color:var(--gold-strong)}
 .ash-head button{width:40px;height:36px;border:none;background:transparent;
   color:var(--bar-ink);cursor:pointer;font-size:24px;line-height:1;opacity:.7}
+#ashDiff{margin:2px 2px 10px;padding:9px 12px;border-radius:12px;
+  border:1.5px dashed var(--gold);color:var(--gold-strong);
+  font-family:var(--font-ui);font-size:13.5px;font-weight:700;
+  line-height:1.8;cursor:pointer;text-align:right;background:transparent;width:calc(100% - 4px)}
+#ashDiff:active{background:var(--mushaf-shade)}
+#ashDiff i{display:block;font-style:normal;font-weight:400;
+  font-family:var(--font-quran);font-size:18px;line-height:1.7;
+  opacity:.8;margin-top:1px}
 .ash-text{font-family:var(--font-quran);font-size:23px;line-height:2;
   max-height:26vh;overflow-y:auto;margin-bottom:12px;color:var(--mushaf-ink)}
 .ash-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -245,12 +253,51 @@ body.immersive #tabs{display:none}
 .row .t span{display:block;font-size:12.5px;opacity:.62;margin-top:3px}
 .row .t i{display:block;font-style:normal;font-family:var(--font-quran);
   font-size:19px;line-height:1.95;margin-top:4px}
-#q{width:100%;padding:14px;font-size:18px;font-family:var(--font-ui);
+#q,#dq{margin-bottom:2px;width:100%;padding:14px;font-size:18px;font-family:var(--font-ui);
   border:1.5px solid var(--bar-line);border-radius:14px;
   background:transparent;color:var(--bar-ink)}
-#q:focus{outline:none;border-color:var(--gold)}
+#q:focus,#dq:focus{outline:none;border-color:var(--gold)}
 .hint{padding:26px 12px;text-align:center;font-size:15px;
   opacity:.6;color:var(--bar-ink);line-height:1.9}
+
+/* ── لوح الفروق بين الروايتين ── */
+.dcard{border:1.5px solid var(--bar-line);border-radius:16px;
+  padding:12px 14px 10px;margin-bottom:10px;background:var(--mushaf-shade);
+  /* ٣٤٥ بطاقة دفعةً واحدة: هذا يجعل المتصفّح يرسم المرئيّ منها وحده */
+  content-visibility:auto;contain-intrinsic-size:auto 190px}
+.dcard .dw{font-family:var(--font-quran);font-size:27px;line-height:1.75;
+  color:var(--gold-strong);text-align:center;margin-bottom:4px;
+  word-break:break-word}
+.dcard .drow{display:flex;gap:10px;align-items:baseline;
+  padding:7px 0;border-top:1px solid var(--bar-line)}
+.dcard .drow .k{flex:0 0 46px;font-size:12.5px;font-weight:700;
+  opacity:.72;color:var(--bar-ink);padding-top:5px}
+.dcard .drow .val{flex:1;min-width:0}
+.dcard .drow .qt{display:block;font-family:var(--font-quran);
+  font-size:22px;line-height:1.9;color:var(--bar-ink)}
+.dcard .drow .cm{display:block;font-family:var(--font-ui);font-size:12.5px;
+  line-height:1.75;opacity:.62;color:var(--bar-ink);margin-top:2px}
+.dcard .drow.sh .qt{color:var(--gold-strong)}
+.dcard .locs{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.dcard .locs button{border:1.5px solid var(--gold);border-radius:999px;
+  padding:6px 12px;background:transparent;color:var(--gold-strong);
+  font-family:var(--font-ui);font-size:13px;font-weight:700;cursor:pointer}
+.dcard .locs button:active{background:var(--gold);color:#2a2313}
+.dcard .locs .rule{border-style:dashed;opacity:.75;pointer-events:none}
+.dsec{font-size:13px;font-weight:700;color:var(--gold-strong);
+  opacity:.85;margin:16px 4px 8px;letter-spacing:.2px}
+.dsec:first-child{margin-top:2px}
+.dnote{font-size:12px;opacity:.5;color:var(--bar-ink);
+  text-align:center;line-height:1.9;padding:14px 8px 4px}
+
+/* وميض الآية المقصودة بعد الانتقال إليها.
+   المضلّع في الملف يحمل fill-opacity="0" سمةً، فلا يكفي تغيير opacity. */
+@keyframes ayahflash{
+  0%,100%{fill-opacity:0}
+  15%,55%{fill-opacity:.30}
+}
+#page.svgmode .ayahPolygon.flash{fill:var(--gold);
+  animation:ayahflash 2.4s ease-in-out 1}
 
 #msg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
   padding:32px;text-align:center;font-size:19px;line-height:1.9;
@@ -281,6 +328,18 @@ body.immersive #tabs{display:none}
       <div class="pane-body" id="trackBody"></div>
     </section>
 
+    <section class="pane" id="paneDiff">
+      <div class="pane-head"><span class="pad"></span><b>شعبة وحفص</b><span class="pad"></span></div>
+      <div class="pane-body">
+        <div class="seg">
+          <button id="segDAll" class="on">المواضع</button>
+          <button id="segDGen">قواعد عامّة</button>
+        </div>
+        <input id="dq" type="search" placeholder="كلمة · اسم سورة · رقم صفحة" autocomplete="off"/>
+        <div id="dOut"></div>
+      </div>
+    </section>
+
     <section class="pane" id="paneIndex">
       <div class="pane-head"><span class="pad"></span><b>الفهرس والبحث</b><span class="pad"></span></div>
       <div class="pane-body">
@@ -304,6 +363,10 @@ body.immersive #tabs{display:none}
       <svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 8-8M21 8v5h-5"/></svg>
       <b>المتابعة</b>
     </button>
+    <button data-tab="paneDiff">
+      <svg viewBox="0 0 24 24"><path d="M12 4v16M7 8H4v8h3M17 8h3v8h-3"/></svg>
+      <b>الفروق</b>
+    </button>
     <button data-tab="paneIndex">
       <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
       <b>الفهرس</b>
@@ -318,6 +381,7 @@ body.immersive #tabs{display:none}
     <button id="ashClose" aria-label="إغلاق">×</button>
   </div>
   <div class="ash-text" id="ashText"></div>
+  <button id="ashDiff" hidden></button>
   <div class="ash-acts">
     <button id="ashCopyRef">نسخ الآية</button>
     <button id="ashShare">مشاركة الآية</button>
@@ -342,7 +406,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-05',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-05b',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -851,8 +915,34 @@ function openAyah(su, ay){
   $('ashNoteBox').hidden = true;
   $('ashSaveNote').hidden = true;
   $('ashNote').textContent = notes[ashKey] ? 'تعديل الحاشية' : 'حاشية';
+  showAyahDiff(su, ay);
   $('asheet').classList.add('show');
   $('backdrop').classList.add('show');
+}
+
+/* هل في هذه الآية فرقٌ مذكورٌ في الجدول؟ زرٌّ يأخذه إلى تبويب الفروق. */
+function showAyahDiff(su, ay){
+  const box = $('ashDiff');
+  box.hidden = true;
+  loadDiffs().then(() => {
+    if(ashKey !== su + ':' + ay) return;          // فُتحت آيةٌ أخرى أثناء التحميل
+    const hits = DIFFS.items.filter(e =>
+      e.refs.some(r => r.s === su && r.a === ay));
+    if(!hits.length) return;
+    box.innerHTML = 'في هذه الآية ' +
+      (hits.length === 1 ? 'فرقٌ بين شعبة وحفص' :
+       arNum(hits.length) + ' فروقٍ بين شعبة وحفص') +
+      '<i>' + hits.map(h => h.word).join(' · ') + '</i>';
+    box.hidden = false;
+    box.onclick = () => {
+      closeAyah();
+      switchTab('paneDiff');
+      $('dq').value = '';
+      dMode = 'all'; dFocus = {s:su, a:ay};
+      $('segDAll').classList.add('on'); $('segDGen').classList.remove('on');
+      renderDiffs();
+    };
+  }).catch(() => {});
 }
 function closeAyah(){
   $('asheet').classList.remove('show');
@@ -1051,6 +1141,28 @@ function goto(n){
   const p = Math.max(1, Math.min(TOTAL, n));
   if(p !== current) render(p);
 }
+
+/* الانتقال إلى آية بعينها: الصفحة أوّلاً، ثم وميضٌ يدلّ عليها.
+   الرسم غير متزامن، فننتظر ظهور مضلّع الآية بدل تخمين مهلة. */
+function gotoAyah(su, ay, page){
+  switchTab('paneMushaf');
+  goto(page);
+  let tries = 0;
+  (function look(){
+    const el = pageEl.querySelector(
+      '.ayahPolygon[surah="' + su + '"][ayah="' + ay + '"]');
+    if(el){
+      pageEl.querySelectorAll('.ayahPolygon.flash')
+            .forEach(x => x.classList.remove('flash'));
+      // إعادة تشغيل الحركة لو كانت الآية نفسها مُومضةً للتوّ
+      void el.getBoundingClientRect();
+      el.classList.add('flash');
+      setTimeout(() => el.classList.remove('flash'), 2600);
+      return;
+    }
+    if(++tries < 40) setTimeout(look, 80);
+  })();
+}
 const nextPage = () => goto(current + 1);
 const prevPage = () => goto(current - 1);
 
@@ -1123,6 +1235,7 @@ function switchTab(id){
   if(id === 'paneTrack') renderTrack();
   if(id === 'paneIndex' && !$('q').value.trim())
     (idxMode === 'juz' ? showJuzList : showSuraList)();
+  if(id === 'paneDiff' && !$('dOut').children.length) renderDiffs();
 }
 document.querySelectorAll('#tabs button').forEach(b =>
   b.addEventListener('click', () => switchTab(b.dataset.tab)));
@@ -1234,7 +1347,7 @@ function renderTrack(){
         : '<div class="hint" style="padding:8px 0">المس آيةً لتكتب حاشيتك عليها</div>') +
     '</div>' +
 
-    '<div class="ver">مصحف شعبة · نسخة ' + CFG.VERSION + '</div>';
+    '<div class="ver">مصحف شعبة · نسخة \u2066' + CFG.VERSION + '\u2069</div>';
 
   $('trackBody').querySelectorAll('[data-goto]').forEach(b =>
     b.addEventListener('click', () => { switchTab('paneMushaf'); goto(+b.dataset.goto); }));
@@ -1265,6 +1378,139 @@ function renderTrack(){
   });
 
 }
+
+/* ══════════ الفروق بين روايتي شعبة وحفص ══════════ */
+/* البيانات كلّها من جدول الفروق الذي زوّدنا به صاحب البرنامج (nquran.com).
+   البرنامج لا يستنبط فرقاً من مقارنة النصوص؛ إنما يعرض ما في الجدول،
+   ويستعمل بيانات المصحف لأمرٍ واحد لا خطر فيه: أن يدلّ على موضع الآية. */
+let DIFFS = null, dLoading = null, dMode = 'all', dFocus = null;
+
+function loadDiffs(){
+  if(DIFFS) return Promise.resolve(DIFFS);
+  if(dLoading) return dLoading;
+  dLoading = fetch('diffs-shubah.json?v=' + CFG.VERSION)
+    .then(r => { if(!r.ok) throw new Error('http'); return r.json(); })
+    .then(j => { DIFFS = j; return j; });
+  return dLoading;
+}
+
+function diffCard(e){
+  const d = document.createElement('div');
+  d.className = 'dcard';
+  const esc = t => String(t).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const line = (cls, k, w, c) =>
+    '<div class="drow ' + cls + '"><span class="k">' + k + '</span>' +
+    '<span class="val"><span class="qt">' + esc(w) + '</span>' +
+    (c ? '<span class="cm">' + esc(c) + '</span>' : '') + '</span></div>';
+  const dup = norm(e.word) === norm(e.hw);
+  d.innerHTML =
+    (dup ? '' : '<div class="dw">' + esc(e.word) + '</div>') +
+    line('', 'حفص', e.hw, e.hc) +
+    line('sh', 'شعبة', e.sw, e.sc);
+  const locs = document.createElement('div');
+  locs.className = 'locs';
+  if(e.refs && e.refs.length){
+    e.refs.forEach(r => {
+      const b = document.createElement('button');
+      b.textContent = SURAS[r.s] + ' ' + arNum(r.a) + ' · صفحة ' + arNum(r.p);
+      b.addEventListener('click', () => gotoAyah(r.s, r.a, r.p));
+      locs.appendChild(b);
+    });
+  }else{
+    const b = document.createElement('span');
+    b.className = 'rule';
+    b.textContent = e.scope || 'حيث أتى';
+    b.style.cssText = 'border:1.5px dashed var(--gold);border-radius:999px;' +
+      'padding:6px 12px;color:var(--gold-strong);font-size:13px;font-weight:700;opacity:.8';
+    locs.appendChild(b);
+  }
+  d.appendChild(locs);
+  return d;
+}
+
+function renderDiffs(){
+  const out = $('dOut');
+  out.innerHTML = '<div class="hint">جارِ فتح جدول الفروق…</div>';
+  loadDiffs().then(() => {
+    const raw = $('dq').value.trim();
+    const q   = raw ? norm(raw) : '';
+    const digits = raw.replace(/[٠-٩]/g, c => '٠١٢٣٤٥٦٧٨٩'.indexOf(c));
+    const pageQ  = /^\d+$/.test(digits) ? parseInt(digits) : null;
+
+    const list = DIFFS.items.filter(e => {
+      if(dFocus) return e.refs.some(r => r.s === dFocus.s && r.a === dFocus.a);
+      const gen = !e.refs.length;
+      if(dMode === 'gen' && !gen) return false;
+      if(dMode === 'all' && gen && !q) return false;
+      if(!raw) return true;
+      if(pageQ !== null) return e.refs.some(r => r.p === pageQ || r.a === pageQ);
+      return norm(e.word).indexOf(q)   !== -1
+          || norm(e.hw).indexOf(q)     !== -1
+          || norm(e.sw).indexOf(q)     !== -1
+          || norm(e.hc).indexOf(q)     !== -1
+          || norm(e.sc).indexOf(q)     !== -1
+          || e.refs.some(r => norm(SURAS[r.s]).indexOf(q) !== -1);
+    });
+
+    out.innerHTML = '';
+    if(!list.length){ out.innerHTML = '<div class="hint">لا شيء بهذا الوصف</div>'; return; }
+
+    const frag = document.createDocumentFragment();
+    if(dFocus){
+      const h = document.createElement('div');
+      h.className = 'dsec';
+      h.innerHTML = 'سورة ' + SURAS[dFocus.s] + ' · الآية ' + arNum(dFocus.a);
+      frag.appendChild(h);
+      const back = document.createElement('button');
+      back.className = 'ghost';
+      back.textContent = 'عرض جميع المواضع';
+      back.style.marginBottom = '6px';
+      back.addEventListener('click', () => { dFocus = null; renderDiffs(); });
+      frag.appendChild(back);
+    }
+    if(dMode === 'gen'){
+      const h = document.createElement('div');
+      h.className = 'dsec';
+      h.textContent = 'قواعد تسري حيثما وردت الكلمة في القرآن';
+      frag.appendChild(h);
+    }
+    let lastSura = -1;
+    list.forEach(e => {
+      if(dMode !== 'gen' && e.refs.length && e.refs[0].s !== lastSura){
+        lastSura = e.refs[0].s;
+        const h = document.createElement('div');
+        h.className = 'dsec';
+        h.textContent = 'سورة ' + SURAS[lastSura];
+        frag.appendChild(h);
+      }
+      frag.appendChild(diffCard(e));
+    });
+    const n = document.createElement('div');
+    n.className = 'dnote';
+    n.textContent = arNum(list.length) + ' موضعاً · ' + DIFFS.src;
+    frag.appendChild(n);
+    out.appendChild(frag);
+  }).catch(() => {
+    out.innerHTML = '<div class="hint">تعذّر فتح جدول الفروق</div>';
+  });
+}
+
+$('segDAll').addEventListener('click', () => {
+  dMode = 'all'; dFocus = null;
+  $('segDAll').classList.add('on'); $('segDGen').classList.remove('on');
+  renderDiffs();
+});
+$('segDGen').addEventListener('click', () => {
+  dMode = 'gen'; dFocus = null;
+  $('segDGen').classList.add('on'); $('segDAll').classList.remove('on');
+  renderDiffs();
+});
+let dTimer = null;
+$('dq').addEventListener('input', () => {
+  dFocus = null;                      // الكتابة تُلغي التركيز على آية بعينها
+  clearTimeout(dTimer);
+  dTimer = setTimeout(renderDiffs, 180);
+});
 
 /* ══════════ الفهرس والبحث ══════════ */
 // بدايات الأجزاء في مصحف المدينة. تحقّقت منها على بيانات شعبة نفسها:
