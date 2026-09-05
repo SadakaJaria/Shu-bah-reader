@@ -2,7 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no"/>
+<!-- التكبير بالإصبعين مسموح: الصفحة رسمٌ متجه يبقى حادّاً مهما كبر،
+     والسحب بإصبع واحد لا يتأثّر فيبقى التقليب سليماً -->
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=5,user-scalable=yes"/>
 <meta name="theme-color" content="#f3ede0" media="(prefers-color-scheme: light)"/>
 <meta name="theme-color" content="#0a1712" media="(prefers-color-scheme: dark)"/>
 <title>مصحف شعبة</title>
@@ -96,6 +98,13 @@ body.immersive #top{display:none}
   color:var(--gold-strong);font-family:var(--font-ui);font-size:.4em;font-weight:700;
   text-align:center;vertical-align:middle}
 
+/* ── صفحة المصحف المتجهة (SVG) ── */
+#page.svgmode{display:flex;align-items:center;justify-content:center;padding:4px}
+#page.svgmode svg{width:100%;height:100%;display:block}
+/* الحبر مرسوم بلون ثابت في الملف؛ نتجاوزه ليتبع الوضع الغامق */
+#page.svgmode svg [fill="#231f20"]{fill:var(--mushaf-ink)}
+#page.svgmode .ayahPolygon{cursor:pointer}
+
 /* ── الألواح: الفهرس والبحث ── */
 .sheet{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;background:var(--bar)}
 .sheet.show{display:flex}
@@ -181,12 +190,14 @@ body.immersive #top{display:none}
 'use strict';
 
 const CFG = {
+  // 'svg'    = صفحة مصحف المدينة المطبوعة نفسها، رسماً متجهاً (المطابقة التامّة)
   // 'block'  = إطار واحد لكل الصفحات: مقاس خطّ واحد وكل سطر يملأ العرض.
   //            حدود الصفحات مطابقة للمصحف، ومواضع قطع الأسطر داخلها لا.
   // 'mushaf' = أسطر مصحف المدينة كما هي (مطابقة تامّة، مقاس متغيّر ١٥→٤١)
   // 'flow'   = نصّ متدفّق بخطّ كبير مع تمرير
-  LAYOUT    : 'block',
+  LAYOUT    : 'svg',
   DATA      : 'quran-shubah.json',
+  SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
@@ -575,8 +586,53 @@ function autofit(){
   });
 }
 
+/* ══════════ صفحة المصحف المتجهة ══════════
+   الملفّات مضغوطة بـBrotli ويفكّها المتصفّح من تلقائه متى أرسل الخادم
+   ترويسة Content-Encoding: br (انظر vercel.json و serve.py). */
+const SVG_CACHE = new Map();
+
+async function fetchSvg(p){
+  const key = String(p).padStart(3, '0');
+  if(SVG_CACHE.has(key)) return SVG_CACHE.get(key);
+  const r = await fetch(CFG.SVG_DIR + '/' + key + '.svg.br');
+  if(!r.ok) throw new Error('page ' + p);
+  const t = await r.text();
+  if(t.charCodeAt(0) !== 60)          // ليست '<': الخادم لم يفكّ الضغط
+    throw new Error('br-header');
+  if(SVG_CACHE.size > 6) SVG_CACHE.delete(SVG_CACHE.keys().next().value);
+  SVG_CACHE.set(key, t);
+  return t;
+}
+
+let svgToken = 0;
+async function renderSvg(p){
+  const token = ++svgToken;
+  pageEl.classList.add('loading');
+  current = p;
+  try{ localStorage.setItem(CFG.STORE_KEY, String(p)); }catch(_){}
+  setLabel(p);
+  try{
+    const t = await fetchSvg(p);
+    if(token !== svgToken) return;
+    pageEl.innerHTML = t;
+    pageEl.classList.remove('loading');
+    // تحميل مسبق للصفحة التالية: التقليب يصير فورياً
+    if(p < TOTAL) fetchSvg(p + 1).catch(() => {});
+  }catch(e){
+    if(token !== svgToken) return;
+    pageEl.classList.remove('loading');
+    pageEl.innerHTML = '';
+    msgEl.textContent = (e && e.message === 'br-header')
+      ? 'الخادم لا يرسل ترويسة Content-Encoding: br'
+      : 'تعذّر فتح الصفحة — تحقّق من الاتصال';
+    msgEl.classList.add('show');
+    setTimeout(() => msgEl.classList.remove('show'), 2600);
+  }
+}
+
 /* ══════════ العرض ══════════ */
 function render(p){
+  if(CFG.LAYOUT === 'svg'){ pageEl.classList.add('svgmode'); renderSvg(p); return; }
   pageEl.classList.add('loading');
   current = p;
   try{ localStorage.setItem(CFG.STORE_KEY, String(p)); }catch(_){}
@@ -628,6 +684,7 @@ function toggleImmersive(){
       if(r && r.catch) r.catch(swallow);
     }
   }catch(_){}
+  if(CFG.LAYOUT === 'svg') return;   // الرسم المتجه يملأ الحيّز من تلقائه
   requestAnimationFrame(() => { curEm = null; buildPage(current); autofit(); });
 }
 
@@ -749,6 +806,7 @@ function runSearch(){
 // دوران الشاشة أو تغيّر أبعادها: سعة السطر تتبع الارتفاع، فنعيد البناء
 let refitTimer = null;
 function refit(){
+  if(CFG.LAYOUT === 'svg') return;   // الرسم المتجه يتمدّد بنفسه
   clearTimeout(refitTimer);
   refitTimer = setTimeout(() => {
     if(!current) return;
@@ -790,7 +848,7 @@ async function preloadFonts(){
   // ?page=٢٥٥ يفتح صفحة بعينها (للفحص والروابط)، وإلّا فآخر صفحة محفوظة
   let p = parseInt(new URLSearchParams(location.search).get('page')) || 0;
   if(!p){ try{ p = parseInt(localStorage.getItem(CFG.STORE_KEY)) || 1; }catch(_){ p = 1; } }
-  await preloadFonts();
+  if(CFG.LAYOUT !== 'svg') await preloadFonts();
   msgEl.classList.remove('show');
   render(Math.max(1, Math.min(TOTAL, p)));
 })();
