@@ -199,6 +199,8 @@ body.immersive #tabs{display:none}
 .ash-text{font-family:var(--font-quran);font-size:23px;line-height:2;
   max-height:26vh;overflow-y:auto;margin-bottom:12px;color:var(--mushaf-ink)}
 .ash-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* ثلاثة أزرار: الثالث يمتدّ على العرض كلّه فلا يبقى فراغ أعرج */
+.ash-acts button:last-child{grid-column:1 / -1}
 .ash-acts button{height:52px;border:1.5px solid var(--bar-line);border-radius:14px;
   background:transparent;color:var(--bar-ink);cursor:pointer;
   font-family:var(--font-ui);font-size:15px;font-weight:700}
@@ -317,8 +319,7 @@ body.immersive #tabs{display:none}
   </div>
   <div class="ash-text" id="ashText"></div>
   <div class="ash-acts">
-    <button id="ashCopy">نسخ الآية</button>
-    <button id="ashCopyRef">نسخ مع المرجع</button>
+    <button id="ashCopyRef">نسخ الآية</button>
     <button id="ashShare">مشاركة الآية</button>
     <button id="ashNote">حاشية</button>
   </div>
@@ -868,10 +869,6 @@ async function copyText(t){
   try{ await navigator.clipboard.writeText(t); toast('نُسخت'); }
   catch(_){ toast('تعذّر النسخ'); }
 }
-$('ashCopy').addEventListener('click', () => {
-  const [su, ay] = ashKey.split(':').map(Number);
-  copyText(verseOf(su, ay).text);
-});
 $('ashCopyRef').addEventListener('click', () => {
   const [su, ay] = ashKey.split(':').map(Number);
   copyText('﴿' + verseOf(su, ay).text + '﴾ [' + SURAS[su] + ': ' + ay + ']');
@@ -893,22 +890,59 @@ $('ashSaveNote').addEventListener('click', () => {
 /* بطاقة الآية للمشاركة: نقصّ الآية من رسم الصفحة المطبوعة، ثمّ نضعها
    في إطارٍ ذهبي مع مرجعها وتوقيع التطبيق. الورق فاتحٌ دائماً ولو كان
    التطبيق ليلياً — البطاقة تُرسَل إلى غيره لا تُقرأ في الظلام. */
+// نُوسّع مستطيلات المضلّع رأسياً قليلاً: حدودها عند حدّ السطر تماماً،
+// فتقصّ أطراف الحركات العالية والنازلة لو أخذناها كما هي.
+function inflateY(d, dy){
+  return d.replace(/M\s*([-\d.]+)[\s,]+([-\d.]+)\s*L\s*([-\d.]+)[\s,]+([-\d.]+)\s*L\s*([-\d.]+)[\s,]+([-\d.]+)\s*L\s*([-\d.]+)[\s,]+([-\d.]+)\s*Z/g,
+    (m, x1, y1, x2, y2, x3, y3, x4, y4) => {
+      const ys = [y1, y2, y3, y4].map(Number);
+      const lo = Math.min(...ys) - dy, hi = Math.max(...ys) + dy;
+      const f = y => (Number(y) === Math.min(...ys) ? lo : hi);
+      return 'M ' + x1 + ' ' + f(y1) + ' L ' + x2 + ' ' + f(y2) +
+             ' L ' + x3 + ' ' + f(y3) + ' L ' + x4 + ' ' + f(y4) + ' Z';
+    });
+}
+
 async function ayahImage(su, ay){
   const svg = pageEl.querySelector('svg');
   const poly = svg && svg.querySelector('.ayahPolygon[surah="' + su + '"][ayah="' + ay + '"]');
   if(!poly) return null;
-  // pad صغير: مضلّع الآية يقف عند حدّ السطر، وأي زيادة تُدخل حبر السطر
-  // المجاور فتظهر حروفٌ مقطوعة أعلى البطاقة وأسفلها
-  const bb = poly.getBBox(), pad = 1;
+
   const clone = svg.cloneNode(true);
+  clone.querySelectorAll('.ayahPolygon').forEach(e => e.remove());
+  clone.querySelectorAll('[fill="#231f20"]').forEach(e => e.setAttribute('fill', '#1a140d'));
+
+  // المضلّع قناعاً: المستطيل الحاوي وحده يجرّ معه ما جاور الآية في أسطرها
+  const NS = 'http://www.w3.org/2000/svg';
+  const dInf = inflateY(poly.getAttribute('d'), 3);
+  const cp = document.createElementNS(NS, 'clipPath');
+  cp.setAttribute('id', 'ayahClip');
+  const cpPath = document.createElementNS(NS, 'path');
+  cpPath.setAttribute('d', dInf);
+  cp.appendChild(cpPath);
+  // القناع يُوضع على غلافٍ بلا تحويل: مجموعة الرسم تحمل matrix، ولو وُضع
+  // عليها لفُسّرت إحداثياته في فضائها المحوَّل لا في فضاء الصفحة فتخرج فارغة
+  const wrap = document.createElementNS(NS, 'g');
+  wrap.setAttribute('clip-path', 'url(#ayahClip)');
+  while(clone.firstChild) wrap.appendChild(clone.firstChild);
+  clone.appendChild(cp);
+  clone.appendChild(wrap);
+
+  // حدود القصّ من المضلّع الموسَّع نفسه
+  const probe = document.createElementNS(NS, 'path');
+  probe.setAttribute('d', dInf);
+  probe.setAttribute('fill', 'none');
+  svg.appendChild(probe);
+  const bb = probe.getBBox();
+  svg.removeChild(probe);
+
+  const pad = 1;
   clone.setAttribute('viewBox',
     (bb.x - pad) + ' ' + (bb.y - pad) + ' ' + (bb.width + pad * 2) + ' ' + (bb.height + pad * 2));
-  clone.querySelectorAll('.ayahPolygon').forEach(e => e.remove());
-  // اللون يأتي من CSS ولا CSS في ملفٍّ مستقلّ، فيُثبَّت على النسخة
-  clone.querySelectorAll('[fill="#231f20"]').forEach(e => e.setAttribute('fill', '#1a140d'));
   const k = 4;
   const w = Math.round((bb.width + pad * 2) * k), h = Math.round((bb.height + pad * 2) * k);
   clone.setAttribute('width', w); clone.setAttribute('height', h);
+
   const img = new Image();
   await new Promise((res, rej) => {
     img.onload = res; img.onerror = rej;
