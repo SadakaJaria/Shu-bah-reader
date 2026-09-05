@@ -135,9 +135,16 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 'use strict';
 
 const CFG = {
-  // 'mushaf' = أسطر مصحف المدينة كما هي (مطابقة للشكل، خطّ صغير على الهاتف)
-  // 'flow'   = نصّ متدفّق داخل حدود الصفحة نفسها (خطّ كبير + تمرير)
-  LAYOUT    : 'mushaf',
+  // 'block'  = إطار واحد لكل الصفحات: مقاس خطّ ثابت وكل سطر يملأ العرض.
+  //            حدود الصفحات مطابقة للمصحف، ومواضع قطع الأسطر داخلها لا.
+  // 'mushaf' = أسطر مصحف المدينة كما هي (مطابقة تامّة، مقاس متغيّر ١٥→٤١)
+  // 'flow'   = نصّ متدفّق بخطّ كبير مع تمرير
+  LAYOUT    : 'block',
+  // سعة السطر بوحدة em عند المقاس الثابت. قيست على الصفحات الـ٦٠٤:
+  // عند ١٧ لا تتجاوز صفحةٌ واحدة خمسة عشر سطراً، فيثبت التباعد أيضاً.
+  // (١٥٫٨ تعطي خطّاً أكبر لكن ثماني صفحات تخرج بستّة عشر سطراً.)
+  LINE_EM   : 17.0,
+  LINES     : 15,          // أسطر صفحة المصحف — التباعد يُقسم عليها دائماً
   DATA      : 'quran-shubah.json',
   STORE_KEY : 'shubah:lastPage',
   REF       : 44           // حجم مرجعي للقياس
@@ -253,6 +260,35 @@ function composeLines(ayat, ctx){
 }
 
 /* ══════════ بناء الصفحة ══════════ */
+// نمط الإطار الواحد: تُقطع الأسطر لتملأ سعةً ثابتة (LINE_EM)، فيخرج مقاس
+// الخطّ نفسه في كل صفحات المصحف. الصفحة تبقى صفحة المصحف، والقطع داخلها لنا.
+function composeBlock(ayat, ctx){
+  const REF = CFG.REF, GAP = 0.14, cap = CFG.LINE_EM;
+  const rows = [];
+  let items = [], sum = 0;
+  const flush = () => { if(items.length){ rows.push({items:items, w:sum}); items=[]; sum=0; } };
+
+  ayat.forEach(a => {
+    if(a.aya === 1){
+      flush();
+      rows.push({special:{t:'head', s:a.sura}});
+      if(a.sura !== 1 && a.sura !== 9) rows.push({special:{t:'bas'}});
+    }
+    const toks = a.text.split(/\s+/).filter(Boolean).map(t => ({txt:t, a:a}));
+    toks.push({num:a.aya, a:a});
+    toks.forEach(t => {
+      const tw = (t.num !== undefined) ? REF * 0.62 : ctx.measureText(t.txt).width;
+      // العرض بوحدة em لو أضفنا هذا الرمز: المجموع زائد فاصلاً لكل ما سبقه
+      const need = (sum + tw) / REF + GAP * items.length;
+      if(items.length && need > cap) flush();
+      items.push(t);
+      sum += tw;
+    });
+  });
+  flush();
+  return rows;
+}
+
 // نمط التدفّق: نفس آيات الصفحة وعنوانها وبسملتها، بلا التزام بمواضع الأسطر
 function buildFlow(ayat){
   const frag = document.createDocumentFragment();
@@ -299,7 +335,7 @@ function buildPage(p){
   const ctx = buildPage._ctx || (buildPage._ctx = document.createElement('canvas').getContext('2d'));
   ctx.font = CFG.REF + "px " + getComputedStyle(pageEl).fontFamily;
   // القياس بالحجم المرجعي: النِّسَب وحدها تهمّ، وautofit يضبط الحجم النهائي
-  const rows = composeLines(ayat, ctx);
+  const rows = (CFG.LAYOUT === 'block') ? composeBlock(ayat, ctx) : composeLines(ayat, ctx);
   currentRows = rows;
 
   const frag = document.createDocumentFragment();
@@ -369,6 +405,30 @@ function autofit(){
 
   const lines = [...pageEl.querySelectorAll('.m-line')];
   if(!lines.length) return;
+
+  if(CFG.LAYOUT === 'block'){
+    // المقاس مشتقّ من سعة السطر الثابتة وحدها، فهو واحدٌ في كل صفحة
+    const usableH0 = pageEl.clientHeight - parseFloat(pcs.paddingTop) - parseFloat(pcs.paddingBottom);
+    let size = Math.max(12, avail / CFG.LINE_EM * 0.985);
+    // التباعد يُقسم على خمسة عشر دائماً لا على أسطر هذه الصفحة، فيخرج
+    // إيقاع الصفحات واحداً. والصفحة الأقصر تُتوسَّط رأسياً (justify-content).
+    const slot0 = usableH0 / Math.max(CFG.LINES, lines.length);
+    // صمّام: لو خرجت صفحة بأسطر أكثر من المتوقّع لا ندع السطور تتداخل
+    if(size * 1.62 > slot0) size = slot0 / 1.62;
+    pageEl.style.fontSize = size + 'px';
+    // السطر القصير (آخر سطر في الصفحة أو ما قبل عنوان سورة) لا يُمطّ:
+    // مطّ خمس كلمات على عرض الصفحة يترك فجواتٍ تُشتّت العين.
+    const GAP0 = 0.14;
+    lines.forEach((l, i) => {
+      l.style.height = slot0 + 'px';
+      l.style.transform = '';
+      const row = currentRows[i];
+      if(!row || !row.items){ l.classList.remove('center'); return; }
+      const w = row.w * size / REF + GAP0 * size * Math.max(0, row.items.length - 1);
+      l.classList.toggle('center', w < avail * 0.8);
+    });
+    return;
+  }
 
   // العرض المرسوم لكل سطر مقيسٌ عند بناء الصفحة (canvas)، لا من الـDOM:
   // scrollWidth لا يحسب الفيض عند حافة البدء في اتجاه RTL، فكان القياس
