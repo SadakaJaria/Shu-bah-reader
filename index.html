@@ -44,12 +44,20 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 #reader{position:fixed;inset:0;display:flex;flex-direction:column;
   background:radial-gradient(130% 90% at 50% 42%,var(--mushaf-shade),transparent 70%),var(--mushaf-bg)}
 
-/* ── الشريط العلوي: اسم السورة ── */
-#top{flex:0 0 auto;z-index:10;
-  padding:calc(env(safe-area-inset-top) + 6px) 14px 6px;
-  background:var(--bar);border-bottom:1px solid var(--bar-line);
-  box-shadow:0 6px 18px rgba(0,0,0,.12);
-  text-align:center;font-size:15px;font-weight:700;color:var(--gold-strong)}
+/* ── الشريط العلوي: فهرس · السورة والصفحة · بحث ── */
+#top{flex:0 0 auto;z-index:20;display:flex;align-items:center;gap:6px;
+  padding:calc(env(safe-area-inset-top) + 5px) 8px 5px;
+  background:var(--bar);border-bottom:1px solid var(--bar-line)}
+#top button{flex:0 0 auto;width:46px;height:40px;
+  display:flex;align-items:center;justify-content:center;
+  border:none;background:transparent;color:var(--gold-strong);cursor:pointer;border-radius:12px}
+#top button:active{transform:scale(.92)}
+#top button svg{width:25px;height:25px;fill:none;stroke:currentColor;
+  stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#label{flex:1;min-width:0;text-align:center;font-size:16.5px;font-weight:700;
+  color:var(--gold-strong);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* لمسةٌ على الصفحة تُخفي الشريط: الشاشة كلّها للمصحف */
+body.immersive #top{display:none}
 
 /* ── الصفحة: خمسة عشر سطراً ── */
 #page{flex:1 1 auto;min-height:0;position:relative;
@@ -88,23 +96,40 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
   color:var(--gold-strong);font-family:var(--font-ui);font-size:.4em;font-weight:700;
   text-align:center;vertical-align:middle}
 
-/* ── الشريط السفلي: سهمان ورقم الصفحة ── */
-#bot{flex:0 0 auto;z-index:10;display:flex;align-items:center;gap:12px;
-  padding:7px 12px calc(env(safe-area-inset-bottom) + 7px);
-  background:var(--bar);border-top:1px solid var(--bar-line);
-  box-shadow:0 -6px 18px rgba(0,0,0,.12)}
-#bot button{flex:1;height:58px;min-width:0;
-  display:flex;align-items:center;justify-content:center;
-  border:1.5px solid var(--bar-line);border-radius:18px;
-  background:transparent;color:var(--gold-strong);cursor:pointer;
-  transition:transform .12s,opacity .2s}
-#bot button:active{transform:scale(.96)}
-#bot button:disabled{opacity:.28;cursor:default}
-#bot button svg{width:32px;height:32px;fill:none;stroke:currentColor;
-  stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#pageNum{flex:0 0 auto;min-width:92px;text-align:center;
-  font-size:23px;font-weight:700;color:var(--bar-ink);line-height:1.2}
-#pageNum small{display:block;font-size:11.5px;font-weight:400;opacity:.62;margin-top:2px}
+/* ── الألواح: الفهرس والبحث ── */
+.sheet{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;background:var(--bar)}
+.sheet.show{display:flex}
+.sh-head{flex:0 0 auto;display:flex;align-items:center;gap:6px;
+  padding:calc(env(safe-area-inset-top) + 8px) 8px 8px;border-bottom:1px solid var(--bar-line)}
+.sh-head b{flex:1;text-align:center;font-size:17.5px;font-weight:700;color:var(--gold-strong)}
+.sh-head .pad{width:46px;flex:0 0 auto}
+.sh-close{width:46px;height:40px;flex:0 0 auto;border:none;background:transparent;
+  color:var(--gold-strong);cursor:pointer}
+.sh-close svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.sh-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:8px 10px calc(env(safe-area-inset-bottom) + 16px)}
+
+/* صفٌّ كبير يسهل ضغطه */
+.row{display:flex;align-items:center;gap:12px;width:100%;
+  padding:13px 12px;margin-bottom:7px;
+  border:1px solid var(--bar-line);border-radius:14px;
+  background:transparent;color:var(--bar-ink);cursor:pointer;
+  text-align:right;font-family:var(--font-ui)}
+.row:active{background:var(--mushaf-shade)}
+.row .n{flex:0 0 auto;width:36px;height:36px;line-height:34px;text-align:center;
+  border:1.5px solid var(--gold);border-radius:50%;
+  color:var(--gold-strong);font-size:13.5px;font-weight:700}
+.row .t{flex:1;min-width:0}
+.row .t b{display:block;font-size:18px;font-weight:700}
+.row .t span{display:block;font-size:12.5px;opacity:.62;margin-top:3px}
+.row .t i{display:block;font-style:normal;font-family:var(--font-quran);
+  font-size:19px;line-height:1.95;margin-top:4px}
+#q{width:100%;padding:14px;font-size:18px;font-family:var(--font-ui);
+  border:1.5px solid var(--bar-line);border-radius:14px;
+  background:transparent;color:var(--bar-ink)}
+#q:focus{outline:none;border-color:var(--gold)}
+.hint{padding:26px 12px;text-align:center;font-size:15px;
+  opacity:.6;color:var(--bar-ink);line-height:1.9}
 
 #msg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
   padding:32px;text-align:center;font-size:19px;line-height:1.9;
@@ -115,50 +140,75 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 <body>
 
 <div id="reader">
-  <div id="top"></div>
-  <div id="page"></div>
-  <div id="bot">
-    <!-- في RTL يُرسم أوّلُ عنصرٍ يميناً: السابق يميناً والتالي يساراً،
-         وهو اتجاه تقليب المصحف -->
-    <button id="prev" aria-label="الصفحة السابقة">
-      <svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+  <div id="top">
+    <button id="idxBtn" aria-label="فهرس السور">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
     </button>
-    <div id="pageNum"></div>
-    <button id="next" aria-label="الصفحة التالية">
-      <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    <div id="label"></div>
+    <button id="findBtn" aria-label="بحث">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
     </button>
   </div>
+  <div id="page"></div>
 </div>
+
+<div class="sheet" id="idxSheet">
+  <div class="sh-head">
+    <button class="sh-close" data-close="idxSheet" aria-label="إغلاق">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <b>فهرس السور</b><span class="pad"></span>
+  </div>
+  <div class="sh-body" id="idxBody"></div>
+</div>
+
+<div class="sheet" id="findSheet">
+  <div class="sh-head">
+    <button class="sh-close" data-close="findSheet" aria-label="إغلاق">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <b>بحث</b><span class="pad"></span>
+  </div>
+  <div class="sh-body">
+    <input id="q" type="search" placeholder="كلمة من القرآن · اسم سورة · رقم صفحة" autocomplete="off"/>
+    <div id="qOut"><div class="hint">اكتب كلمةً للبحث في المصحف كلّه</div></div>
+  </div>
+</div>
+
 <div id="msg" class="show">جارِ فتح المصحف…</div>
 
 <script>
 'use strict';
 
 const CFG = {
-  // 'block'  = إطار واحد لكل الصفحات: مقاس خطّ ثابت وكل سطر يملأ العرض.
+  // 'block'  = إطار واحد لكل الصفحات: مقاس خطّ واحد وكل سطر يملأ العرض.
   //            حدود الصفحات مطابقة للمصحف، ومواضع قطع الأسطر داخلها لا.
   // 'mushaf' = أسطر مصحف المدينة كما هي (مطابقة تامّة، مقاس متغيّر ١٥→٤١)
   // 'flow'   = نصّ متدفّق بخطّ كبير مع تمرير
   LAYOUT    : 'block',
-  // سعة السطر بوحدة em عند المقاس الثابت. قيست على الصفحات الـ٦٠٤:
-  // عند ١٧ لا تتجاوز صفحةٌ واحدة خمسة عشر سطراً، فيثبت التباعد أيضاً.
-  // (١٥٫٨ تعطي خطّاً أكبر لكن ثماني صفحات تخرج بستّة عشر سطراً.)
-  LINE_EM   : 17.0,
-  LINES     : 15,          // أسطر صفحة المصحف — التباعد يُقسم عليها دائماً
   DATA      : 'quran-shubah.json',
   STORE_KEY : 'shubah:lastPage',
-  REF       : 44           // حجم مرجعي للقياس
+  REF       : 44,          // حجم مرجعي للقياس
+  MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
+  // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
+  // قيست على الصفحات الـ٦٠٤ بخطّ Lateef. كلّما ضاقت السعة كبُر الخطّ
+  // واحتاجت الصفحة أسطراً أكثر، فنختار أضيق سعة يتّسع ارتفاعها في الشاشة.
+  EM_TABLE  : [[11,22],[11.5,22],[12,20],[12.5,19],[13,19],[13.5,18],[14,18],
+               [14.5,17],[15,17],[15.5,16],[16,16],[16.5,16],[17,15],[17.5,15],
+               [18,14],[18.5,14],[19,14]]
 };
 
 const BASMALA = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
 
 const $ = id => document.getElementById(id);
-const topEl = $('top'), pageEl = $('page'), numEl = $('pageNum'),
-      msgEl = $('msg'), nextBtn = $('next'), prevBtn = $('prev');
+const pageEl = $('page'), labelEl = $('label'), msgEl = $('msg');
 
 const arNum = n => String(n).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
 
 let SURAS = {}, PAGES = new Map(), TOTAL = 604, current = 0;
+let VERSES = [];            // كل الآيات: للبحث
+let SURA_PAGE = {};         // رقم السورة → صفحتها الأولى
+let curEm = null;           // سعة السطر المختارة لهذه الشاشة
 let currentRows = [];   // صفوف الصفحة المعروضة مع عرض كل صفّ عند الحجم المرجعي
 
 /* ══════════ تحميل المصحف مرّة واحدة ══════════ */
@@ -174,6 +224,29 @@ async function loadQuran(){
     PAGES.get(a.page).push(a);
   });
   TOTAL = Math.max(...PAGES.keys());
+  d.v.forEach(row => {
+    const v = {sura:row[0], aya:row[1], page:row[2], text:row[5]};
+    VERSES.push(v);
+    if(!SURA_PAGE[v.sura] || v.page < SURA_PAGE[v.sura]) SURA_PAGE[v.sura] = v.page;
+  });
+}
+
+/* ══════════ التجريد للبحث ══════════
+   نجرّد الحركات وعلامات الوقف ونوحّد صور الألف والتاء والياء، فيجد
+   القارئُ كلمتَه كما ينطقها لا كما تُرسم بالضبط. */
+const STRIP = /[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g;
+function norm(t){
+  return t.replace(STRIP, '')
+          .replace(/[\u0622\u0623\u0625\u0671]/g, '\u0627')
+          .replace(/\u0629/g, '\u0647')
+          .replace(/\u0649/g, '\u064A')
+          .replace(/\s+/g, ' ').trim();
+}
+let searchReady = false;
+function buildSearchIndex(){
+  if(searchReady) return;
+  VERSES.forEach(v => { v.n = norm(v.text); });
+  searchReady = true;
 }
 
 /* ══════════ توزيع الآيات على أسطر الصفحة ══════════
@@ -262,8 +335,23 @@ function composeLines(ayat, ctx){
 /* ══════════ بناء الصفحة ══════════ */
 // نمط الإطار الواحد: تُقطع الأسطر لتملأ سعةً ثابتة (LINE_EM)، فيخرج مقاس
 // الخطّ نفسه في كل صفحات المصحف. الصفحة تبقى صفحة المصحف، والقطع داخلها لنا.
+// أضيق سعة سطر يتّسع ارتفاعها في الشاشة: كلّما ضاقت كبُر الخطّ وكثرت
+// الأسطر. إخفاء الشريط العلوي يزيد الارتفاع فتُختار سعة أضيق تلقائياً.
+function pickEm(){
+  const pcs = getComputedStyle(pageEl);
+  const avail = pageEl.clientWidth - parseFloat(pcs.paddingRight) - parseFloat(pcs.paddingLeft);
+  const usableH = pageEl.clientHeight - parseFloat(pcs.paddingTop) - parseFloat(pcs.paddingBottom);
+  const T = CFG.EM_TABLE;
+  for(let i = 0; i < T.length; i++){
+    const em = T[i][0], maxLines = T[i][1];
+    const size = avail / em * 0.985;
+    if(size <= CFG.MAX_SIZE && maxLines * size * 1.62 <= usableH) return {em:em, maxLines:maxLines};
+  }
+  return {em:T[T.length-1][0], maxLines:T[T.length-1][1]};
+}
+
 function composeBlock(ayat, ctx){
-  const REF = CFG.REF, GAP = 0.14, cap = CFG.LINE_EM;
+  const REF = CFG.REF, GAP = 0.14, cap = (curEm || (curEm = pickEm())).em;
   const rows = [];
   let items = [], sum = 0;
   const flush = () => { if(items.length){ rows.push({items:items, w:sum}); items=[]; sum=0; } };
@@ -327,14 +415,13 @@ function buildPage(p){
   if(CFG.LAYOUT === 'flow'){
     currentRows = [];
     buildFlow(ayat);
-    const names = [...new Set(ayat.map(a => SURAS[a.sura]))];
-    topEl.textContent = names.length ? 'سورة ' + names.join(' · ') : '';
     return;
   }
 
   const ctx = buildPage._ctx || (buildPage._ctx = document.createElement('canvas').getContext('2d'));
   ctx.font = CFG.REF + "px " + getComputedStyle(pageEl).fontFamily;
   // القياس بالحجم المرجعي: النِّسَب وحدها تهمّ، وautofit يضبط الحجم النهائي
+  if(CFG.LAYOUT === 'block') curEm = pickEm();
   const rows = (CFG.LAYOUT === 'block') ? composeBlock(ayat, ctx) : composeLines(ayat, ctx);
   currentRows = rows;
 
@@ -369,9 +456,6 @@ function buildPage(p){
 
   pageEl.innerHTML = '';
   pageEl.appendChild(frag);
-
-  const names = [...new Set(ayat.map(a => SURAS[a.sura]))];
-  topEl.textContent = names.length ? 'سورة ' + names.join(' · ') : '';
 }
 
 /* ══════════ أكبر خطّ يتّسع في الصفحة ══════════ */
@@ -409,10 +493,11 @@ function autofit(){
   if(CFG.LAYOUT === 'block'){
     // المقاس مشتقّ من سعة السطر الثابتة وحدها، فهو واحدٌ في كل صفحة
     const usableH0 = pageEl.clientHeight - parseFloat(pcs.paddingTop) - parseFloat(pcs.paddingBottom);
-    let size = Math.max(12, avail / CFG.LINE_EM * 0.985);
-    // التباعد يُقسم على خمسة عشر دائماً لا على أسطر هذه الصفحة، فيخرج
-    // إيقاع الصفحات واحداً. والصفحة الأقصر تُتوسَّط رأسياً (justify-content).
-    const slot0 = usableH0 / Math.max(CFG.LINES, lines.length);
+    const pick = curEm || (curEm = pickEm());
+    let size = Math.max(12, avail / pick.em * 0.985);
+    // التباعد يُقسم على أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه، لا على
+    // أسطر هذه الصفحة، فيخرج إيقاع الصفحات واحداً. والأقصر تُتوسَّط رأسياً.
+    const slot0 = usableH0 / Math.max(pick.maxLines, lines.length);
     // صمّام: لو خرجت صفحة بأسطر أكثر من المتوقّع لا ندع السطور تتداخل
     if(size * 1.62 > slot0) size = slot0 / 1.62;
     pageEl.style.fontSize = size + 'px';
@@ -494,9 +579,6 @@ function autofit(){
 function render(p){
   pageEl.classList.add('loading');
   current = p;
-  numEl.innerHTML = arNum(p) + '<small>من ' + arNum(TOTAL) + '</small>';
-  nextBtn.disabled = p >= TOTAL;
-  prevBtn.disabled = p <= 1;
   try{ localStorage.setItem(CFG.STORE_KEY, String(p)); }catch(_){}
 
   const draw = () => {
@@ -504,6 +586,7 @@ function render(p){
     buildPage(p);
     autofit();
     pageEl.classList.remove('loading');
+    setLabel(p);
   };
   // ننتظر جاهزية الخطّ قبل القياس وإلّا قِسنا خطّاً بديلاً بمقاسات مختلفة.
   // صمّام أمان ٣ ثوانٍ: فشل الخطّ لا يترك الصفحة بيضاء.
@@ -514,6 +597,12 @@ function render(p){
 }
 
 /* ══════════ التنقّل ══════════ */
+function setLabel(p){
+  const ayat = PAGES.get(p) || [];
+  const names = [...new Set(ayat.map(a => SURAS[a.sura]))];
+  labelEl.textContent = (names.length ? names.join(' · ') + ' · ' : '') + 'صفحة ' + arNum(p);
+}
+
 function goto(n){
   const p = Math.max(1, Math.min(TOTAL, n));
   if(p !== current) render(p);
@@ -521,13 +610,36 @@ function goto(n){
 const nextPage = () => goto(current + 1);
 const prevPage = () => goto(current - 1);
 
-nextBtn.addEventListener('click', nextPage);
-prevBtn.addEventListener('click', prevPage);
+/* ── لمسةٌ على الصفحة: الشاشة كلّها للمصحف ──
+   إخفاء الشريط يزيد الارتفاع المتاح، فتُختار سعة سطر أضيق ويكبر الخطّ.
+   لذلك نُعيد بناء الصفحة بعد التبديل لا الضبط وحده. */
+function toggleImmersive(){
+  const on = !document.body.classList.contains('immersive');
+  document.body.classList.toggle('immersive', on);
+  // ملء الشاشة الحقيقي مكسبٌ إضافي لا شرط: آيفون لا يدعمه، وبعض السياقات
+  // ترفضه. نبتلع الرفض (وعدٌ لا استثناء) فالإخفاء وحده يكفي.
+  const swallow = () => {};
+  try{
+    if(on && document.documentElement.requestFullscreen){
+      const r = document.documentElement.requestFullscreen();
+      if(r && r.catch) r.catch(swallow);
+    }else if(!on && document.fullscreenElement && document.exitFullscreen){
+      const r = document.exitFullscreen();
+      if(r && r.catch) r.catch(swallow);
+    }
+  }catch(_){}
+  requestAnimationFrame(() => { curEm = null; buildPage(current); autofit(); });
+}
 
-let sx = 0, sy = 0, tracking = false;
+let sx = 0, sy = 0, moved = 0, tracking = false;
 pageEl.addEventListener('touchstart', e => {
   const c = e.changedTouches[0];
-  sx = c.clientX; sy = c.clientY; tracking = true;
+  sx = c.clientX; sy = c.clientY; moved = 0; tracking = true;
+}, {passive:true});
+pageEl.addEventListener('touchmove', e => {
+  if(!tracking) return;
+  const c = e.changedTouches[0];
+  moved = Math.max(moved, Math.hypot(c.clientX - sx, c.clientY - sy));
 }, {passive:true});
 pageEl.addEventListener('touchend', e => {
   if(!tracking) return;
@@ -536,19 +648,114 @@ pageEl.addEventListener('touchend', e => {
   const dx = c.clientX - sx, dy = c.clientY - sy;
   if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60){
     if(dx > 0) nextPage(); else prevPage();   // اتجاه تقليب المصحف
+  }else if(moved < 12){
+    toggleImmersive();
   }
 });
+// الفأرة (سطح المكتب): نقرة = ملء الشاشة
+pageEl.addEventListener('click', () => { if(!('ontouchstart' in window)) toggleImmersive(); });
 
 document.addEventListener('keydown', e => {
   if(e.key === 'ArrowLeft') nextPage();
   else if(e.key === 'ArrowRight') prevPage();
+  else if(e.key === 'Escape') closeSheets();
 });
 
-// دوران الشاشة أو تغيّر أبعادها: أعِد بناء الصفحة (توزيع الأسطر يعتمد العرض)
+/* ══════════ الفهرس والبحث ══════════ */
+function openSheet(id){ $(id).classList.add('show'); }
+function closeSheets(){ document.querySelectorAll('.sheet').forEach(x => x.classList.remove('show')); }
+document.querySelectorAll('[data-close]').forEach(b =>
+  b.addEventListener('click', closeSheets));
+
+function suraRow(id, sub){
+  const b = document.createElement('button');
+  b.className = 'row';
+  b.innerHTML = '<span class="n">' + arNum(id) + '</span><span class="t"><b>سورة '
+    + SURAS[id] + '</b><span>' + sub + '</span></span>';
+  b.addEventListener('click', () => { closeSheets(); goto(SURA_PAGE[id]); });
+  return b;
+}
+
+$('idxBtn').addEventListener('click', () => {
+  const body = $('idxBody');
+  if(!body.children.length){
+    const frag = document.createDocumentFragment();
+    for(let i = 1; i <= 114; i++) frag.appendChild(suraRow(i, 'صفحة ' + arNum(SURA_PAGE[i])));
+    body.appendChild(frag);
+  }
+  openSheet('idxSheet');
+});
+
+$('findBtn').addEventListener('click', () => { openSheet('findSheet'); $('q').focus(); });
+
+let qTimer = null;
+$('q').addEventListener('input', () => {
+  clearTimeout(qTimer);
+  qTimer = setTimeout(runSearch, 180);
+});
+
+function runSearch(){
+  const out = $('qOut');
+  const raw = $('q').value.trim();
+  out.innerHTML = '';
+  if(!raw){ out.innerHTML = '<div class="hint">اكتب كلمةً للبحث في المصحف كلّه</div>'; return; }
+
+  // رقم = صفحة
+  const digits = raw.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  if(/^\d+$/.test(digits)){
+    const p = Math.max(1, Math.min(TOTAL, parseInt(digits)));
+    const b = document.createElement('button');
+    b.className = 'row';
+    b.innerHTML = '<span class="n">↵</span><span class="t"><b>صفحة ' + arNum(p) + '</b></span>';
+    b.addEventListener('click', () => { closeSheets(); goto(p); });
+    out.appendChild(b);
+    return;
+  }
+
+  const q = norm(raw);
+  const frag = document.createDocumentFragment();
+  let n = 0;
+
+  // أسماء السور أوّلاً
+  for(let i = 1; i <= 114 && n < 8; i++){
+    if(norm(SURAS[i]).indexOf(q) !== -1){ frag.appendChild(suraRow(i, 'صفحة ' + arNum(SURA_PAGE[i]))); n++; }
+  }
+
+  buildSearchIndex();
+  let hits = 0;
+  for(let i = 0; i < VERSES.length && hits < 60; i++){
+    const v = VERSES[i];
+    if(v.n.indexOf(q) === -1) continue;
+    hits++;
+    const b = document.createElement('button');
+    b.className = 'row';
+    b.innerHTML = '<span class="n">' + arNum(v.aya) + '</span><span class="t"><b>'
+      + SURAS[v.sura] + ' · صفحة ' + arNum(v.page) + '</b><i>'
+      + (v.text.length > 95 ? v.text.slice(0, 95) + ' …' : v.text) + '</i></span>';
+    b.addEventListener('click', () => { closeSheets(); goto(v.page); });
+    frag.appendChild(b);
+  }
+
+  if(!n && !hits){ out.innerHTML = '<div class="hint">لا نتيجة</div>'; return; }
+  out.appendChild(frag);
+  if(hits >= 60){
+    const d = document.createElement('div');
+    d.className = 'hint';
+    d.textContent = 'عُرضت أوّل ٦٠ نتيجة';
+    out.appendChild(d);
+  }
+}
+
+// دوران الشاشة أو تغيّر أبعادها: سعة السطر تتبع الارتفاع، فنعيد البناء
 let refitTimer = null;
 function refit(){
   clearTimeout(refitTimer);
-  refitTimer = setTimeout(() => { if(current) autofit(); }, 160);
+  refitTimer = setTimeout(() => {
+    if(!current) return;
+    curEm = null;
+    buildPage(current);
+    autofit();
+  }, 160);
 }
 window.addEventListener('resize', refit);
 window.addEventListener('orientationchange', refit);
