@@ -69,8 +69,20 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 #top button:active{transform:scale(.92)}
 #top button svg{width:25px;height:25px;fill:none;stroke:currentColor;
   stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#label{flex:1;min-width:0;text-align:center;font-size:16.5px;font-weight:700;
-  color:var(--gold-strong);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#label{flex:1;min-width:0;text-align:center;overflow:hidden}
+/* خرطوش اسم السورة — على هيئة إطار عنوان السورة في المصحف:
+   حدٌّ ذهبي، وخطٌّ داخلي رفيع، ومعيّنان على الطرفين. */
+.cart{position:relative;display:inline-block;max-width:calc(100% - 26px);
+  padding:4px 16px;border:1.5px solid var(--gold);border-radius:7px;
+  box-shadow:inset 0 0 0 2.5px var(--bar), inset 0 0 0 3.5px var(--bar-line);
+  font-size:15.5px;font-weight:700;color:var(--gold-strong);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.cart::before,.cart::after{content:"";position:absolute;top:50%;
+  width:7px;height:7px;margin-top:-3.5px;background:var(--gold);transform:rotate(45deg)}
+.cart::before{right:-4.5px}
+.cart::after{left:-4.5px}
+.pg{margin-inline-start:9px;font-size:14px;font-weight:700;
+  color:var(--gold-strong);opacity:.72;vertical-align:middle}
 /* لمسةٌ على الصفحة تُخفي الشريط: الشاشة كلّها للمصحف */
 body.immersive #top{display:none}
 
@@ -163,12 +175,6 @@ body.immersive #tabs{display:none}
 .stat b{display:block;font-size:26px;font-weight:700;color:var(--gold-strong)}
 .stat span{display:block;font-size:12px;opacity:.68;margin-top:3px}
 .card h3{font-size:15.5px;font-weight:700;margin-bottom:10px;color:var(--gold-strong)}
-.hrow{display:flex;align-items:center;gap:10px;padding:11px 2px;
-  border-bottom:1px solid var(--bar-line)}
-.hrow:last-child{border-bottom:none}
-.hrow .hd{flex:1;font-size:15px}
-.hrow .hn{font-size:14px;opacity:.68}
-.hrow .hp{min-width:52px;text-align:left;font-size:16px;font-weight:700;color:var(--gold-strong)}
 .danger{width:100%;height:52px;border:1.5px solid var(--bar-line);border-radius:14px;
   background:transparent;color:var(--bar-ink);cursor:pointer;
   font-family:var(--font-ui);font-size:15px;font-weight:700;opacity:.8}
@@ -178,7 +184,49 @@ body.immersive #tabs{display:none}
 #page.svgmode svg{width:100%;height:100%;display:block}
 /* الحبر مرسوم بلون ثابت في الملف؛ نتجاوزه ليتبع الوضع الغامق */
 #page.svgmode svg [fill="#231f20"]{fill:var(--mushaf-ink)}
-#page.svgmode .ayahPolygon{cursor:pointer}
+/* المضلّعات شفّافة تماماً، فلا تتلقّى اللمس إلا بهذا */
+#page.svgmode .ayahPolygon{cursor:pointer;pointer-events:all}
+
+/* ── لوح الآية (بضغطة مطوّلة) ── */
+#asheet{position:fixed;left:0;right:0;bottom:0;z-index:80;
+  background:var(--bar);border-top:1.5px solid var(--gold);
+  border-radius:20px 20px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.28);
+  padding:14px 14px calc(env(safe-area-inset-bottom) + 14px);
+  transform:translateY(102%);transition:transform .26s ease;color:var(--bar-ink)}
+#asheet.show{transform:none}
+.ash-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ash-head b{flex:1;font-size:16px;font-weight:700;color:var(--gold-strong)}
+.ash-head button{width:40px;height:36px;border:none;background:transparent;
+  color:var(--bar-ink);cursor:pointer;font-size:24px;line-height:1;opacity:.7}
+.ash-text{font-family:var(--font-quran);font-size:23px;line-height:2;
+  max-height:26vh;overflow-y:auto;margin-bottom:12px;color:var(--mushaf-ink)}
+.ash-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ash-acts button{height:52px;border:1.5px solid var(--bar-line);border-radius:14px;
+  background:transparent;color:var(--bar-ink);cursor:pointer;
+  font-family:var(--font-ui);font-size:15px;font-weight:700}
+.ash-acts button:active{background:var(--mushaf-shade)}
+#ashNoteBox{width:100%;margin-top:10px;min-height:96px;padding:12px;
+  border:1.5px solid var(--bar-line);border-radius:14px;background:transparent;
+  color:var(--bar-ink);font-family:var(--font-ui);font-size:16px;line-height:1.9;resize:vertical}
+#ashNoteBox:focus{outline:none;border-color:var(--gold)}
+
+/* ── شرائح الفهرس ── */
+.seg{display:flex;gap:8px;margin-bottom:10px}
+.seg button{flex:1;height:46px;border:1.5px solid var(--bar-line);border-radius:14px;
+  background:transparent;color:var(--bar-ink);cursor:pointer;
+  font-family:var(--font-ui);font-size:15px;font-weight:700}
+.seg button.on{background:var(--gold);color:#2a2313;border-color:var(--gold)}
+
+/* ── بطاقة الحواشي والعلامات ── */
+.note{border:1px solid var(--bar-line);border-radius:14px;padding:12px;margin-bottom:8px}
+.note .nh{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.note .nh b{flex:1;font-size:14.5px;font-weight:700;color:var(--gold-strong)}
+.note .nh button{border:none;background:transparent;color:var(--bar-ink);
+  opacity:.6;cursor:pointer;font-size:20px;line-height:1;padding:0 4px}
+.note p{font-size:15.5px;line-height:1.85;white-space:pre-wrap}
+.ghost{width:100%;height:48px;border:1.5px solid var(--bar-line);border-radius:14px;
+  background:transparent;color:var(--gold-strong);cursor:pointer;
+  font-family:var(--font-ui);font-size:15px;font-weight:700;margin-top:4px}
 
 /* صفٌّ كبير يسهل ضغطه */
 .row{display:flex;align-items:center;gap:12px;width:100%;
@@ -219,7 +267,9 @@ body.immersive #tabs{display:none}
           <svg id="themeIcon" viewBox="0 0 24 24"></svg>
         </button>
         <div id="label"></div>
-        <span class="pad" style="width:46px"></span>
+        <button id="markBtn" aria-label="علامة مرجعية">
+          <svg id="markIcon" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>
+        </button>
       </div>
       <div id="page"></div>
     </section>
@@ -232,6 +282,10 @@ body.immersive #tabs{display:none}
     <section class="pane" id="paneIndex">
       <div class="pane-head"><span class="pad"></span><b>الفهرس والبحث</b><span class="pad"></span></div>
       <div class="pane-body">
+        <div class="seg">
+          <button id="segSuras" class="on">السور</button>
+          <button id="segJuz">الأجزاء</button>
+        </div>
         <input id="q" type="search" placeholder="كلمة من القرآن · اسم سورة · رقم صفحة" autocomplete="off"/>
         <div id="qOut"></div>
       </div>
@@ -253,6 +307,22 @@ body.immersive #tabs{display:none}
       <b>الفهرس</b>
     </button>
   </nav>
+</div>
+
+<div id="asheet">
+  <div class="ash-head">
+    <b id="ashTitle"></b>
+    <button id="ashClose" aria-label="إغلاق">×</button>
+  </div>
+  <div class="ash-text" id="ashText"></div>
+  <div class="ash-acts">
+    <button id="ashCopy">نسخ الآية</button>
+    <button id="ashCopyRef">نسخ مع المرجع</button>
+    <button id="ashImg">صورة الآية</button>
+    <button id="ashNote">حاشية</button>
+  </div>
+  <textarea id="ashNoteBox" placeholder="اكتب حاشيتك على هذه الآية…" hidden></textarea>
+  <button class="ghost" id="ashSaveNote" hidden>حفظ الحاشية</button>
 </div>
 
 <div id="msg" class="show">جارِ فتح المصحف…</div>
@@ -730,8 +800,169 @@ function render(p){
 function setLabel(p){
   const ayat = PAGES.get(p) || [];
   const names = [...new Set(ayat.map(a => SURAS[a.sura]))];
-  labelEl.textContent = (names.length ? names.join(' · ') + ' · ' : '') + 'صفحة ' + arNum(p);
+  labelEl.innerHTML = '<span class="cart">' + (names.length ? 'سورة ' + names.join(' · ') : '') +
+    '</span><span class="pg">' + arNum(p) + '</span>';
+  syncMark(p);
 }
+
+/* ══════════ العلامات المرجعية ══════════ */
+const MARKS_KEY = 'shubah:marks';
+function loadMarks(){
+  try{ return JSON.parse(localStorage.getItem(MARKS_KEY)) || []; }catch(_){ return []; }
+}
+function saveMarks(m){ try{ localStorage.setItem(MARKS_KEY, JSON.stringify(m)); }catch(_){} }
+function syncMark(p){
+  const on = loadMarks().indexOf(p) !== -1;
+  $('markIcon').style.fill = on ? 'currentColor' : 'none';
+}
+$('markBtn').addEventListener('click', () => {
+  const m = loadMarks(), i = m.indexOf(current);
+  if(i === -1) m.push(current); else m.splice(i, 1);
+  m.sort((a, b) => a - b);
+  saveMarks(m);
+  syncMark(current);
+  if(currentTab === 'paneTrack') renderTrack();
+});
+
+/* ══════════ الحواشي ══════════ */
+const NOTES_KEY = 'shubah:notes';
+function loadNotes(){
+  try{ return JSON.parse(localStorage.getItem(NOTES_KEY)) || {}; }catch(_){ return {}; }
+}
+function saveNotes(n){ try{ localStorage.setItem(NOTES_KEY, JSON.stringify(n)); }catch(_){} }
+
+/* ══════════ لوح الآية ══════════
+   يُفتح بضغطة مطوّلة على الآية — واللمسة القصيرة تبقى لملء الشاشة. */
+let ashKey = null;
+const verseOf = (su, ay) => VERSES.find(v => v.sura === su && v.aya === ay);
+
+function openAyah(su, ay){
+  const v = verseOf(su, ay);
+  if(!v) return;
+  ashKey = su + ':' + ay;
+  $('ashTitle').textContent = 'سورة ' + SURAS[su] + ' · الآية ' + arNum(ay);
+  $('ashText').textContent = v.text;
+  const notes = loadNotes();
+  $('ashNoteBox').value = notes[ashKey] || '';
+  $('ashNoteBox').hidden = true;
+  $('ashSaveNote').hidden = true;
+  $('ashNote').textContent = notes[ashKey] ? 'تعديل الحاشية' : 'حاشية';
+  $('asheet').classList.add('show');
+}
+const closeAyah = () => $('asheet').classList.remove('show');
+$('ashClose').addEventListener('click', closeAyah);
+
+function toast(t){
+  msgEl.textContent = t; msgEl.classList.add('show');
+  setTimeout(() => msgEl.classList.remove('show'), 1600);
+}
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); toast('نُسخت'); }
+  catch(_){ toast('تعذّر النسخ'); }
+}
+$('ashCopy').addEventListener('click', () => {
+  const [su, ay] = ashKey.split(':').map(Number);
+  copyText(verseOf(su, ay).text);
+});
+$('ashCopyRef').addEventListener('click', () => {
+  const [su, ay] = ashKey.split(':').map(Number);
+  copyText('﴿' + verseOf(su, ay).text + '﴾ [' + SURAS[su] + ': ' + ay + ']');
+});
+$('ashNote').addEventListener('click', () => {
+  const b = $('ashNoteBox'), sv = $('ashSaveNote');
+  b.hidden = !b.hidden; sv.hidden = b.hidden;
+  if(!b.hidden) b.focus();
+});
+$('ashSaveNote').addEventListener('click', () => {
+  const n = loadNotes(), t = $('ashNoteBox').value.trim();
+  if(t) n[ashKey] = t; else delete n[ashKey];
+  saveNotes(n);
+  $('ashNote').textContent = t ? 'تعديل الحاشية' : 'حاشية';
+  toast(t ? 'حُفظت الحاشية' : 'حُذفت الحاشية');
+  if(currentTab === 'paneTrack') renderTrack();
+});
+
+/* صورة الآية: نقصّ رسم الصفحة عند حدود مضلّعها، فتخرج الآية بخطّ
+   المصحف المطبوع نفسه لا بخطّ نصّي. */
+$('ashImg').addEventListener('click', async () => {
+  const [su, ay] = ashKey.split(':').map(Number);
+  const svg = pageEl.querySelector('svg');
+  const poly = svg && svg.querySelector('.ayahPolygon[surah="' + su + '"][ayah="' + ay + '"]');
+  if(!poly){ toast('الآية ليست في هذه الصفحة'); return; }
+  try{
+    const bb = poly.getBBox(), pad = 5;
+    const cs = getComputedStyle(document.documentElement);
+    const ink = cs.getPropertyValue('--mushaf-ink').trim() || '#181410';
+    const paper = cs.getPropertyValue('--mushaf-bg').trim() || '#f7f2e6';
+    const clone = svg.cloneNode(true);
+    clone.setAttribute('viewBox',
+      (bb.x - pad) + ' ' + (bb.y - pad) + ' ' + (bb.width + pad * 2) + ' ' + (bb.height + pad * 2));
+    // اللون يأتي من CSS، ولا CSS في ملفٍّ مستقلّ: نثبّته على النسخة
+    clone.querySelectorAll('[fill="#231f20"]').forEach(e => e.setAttribute('fill', ink));
+    clone.querySelectorAll('.ayahPolygon').forEach(e => e.remove());
+    const NS = 'http://www.w3.org/2000/svg';
+    const bg = document.createElementNS(NS, 'rect');
+    bg.setAttribute('x', bb.x - pad); bg.setAttribute('y', bb.y - pad);
+    bg.setAttribute('width', bb.width + pad * 2); bg.setAttribute('height', bb.height + pad * 2);
+    bg.setAttribute('fill', paper);
+    clone.insertBefore(bg, clone.firstChild);
+
+    const scale = 4;
+    const w = Math.round((bb.width + pad * 2) * scale), h = Math.round((bb.height + pad * 2) * scale);
+    clone.setAttribute('width', w); clone.setAttribute('height', h);
+    const src = 'data:image/svg+xml;charset=utf-8,' +
+      encodeURIComponent(new XMLSerializer().serializeToString(clone));
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = src; });
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    cv.getContext('2d').drawImage(img, 0, 0, w, h);
+    const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    const name = 'ayah-' + su + '-' + ay + '.png';
+    const file = new File([blob], name, { type:'image/png' });
+    if(navigator.canShare && navigator.canShare({ files:[file] })){
+      await navigator.share({ files:[file] });
+    }else{
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = name; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast('حُفظت الصورة');
+    }
+  }catch(e){ toast('تعذّر إخراج الصورة'); }
+});
+
+// ضغطة مطوّلة على آية
+let lpTimer = null, lpMoved = 0, lpX = 0, lpY = 0;
+const clearLP = () => { clearTimeout(lpTimer); lpTimer = null; };
+function ayahAt(target){
+  return target && target.closest && target.closest('.ayahPolygon');
+}
+pageEl.addEventListener('touchstart', e => {
+  const el = ayahAt(e.target);
+  if(!el) return;
+  const c = e.changedTouches[0];
+  lpX = c.clientX; lpY = c.clientY; lpMoved = 0;
+  clearLP();
+  lpTimer = setTimeout(() => {
+    lpTimer = null;
+    if(navigator.vibrate){ try{ navigator.vibrate(12); }catch(_){} }
+    lpFired = true;
+    openAyah(+el.getAttribute('surah'), +el.getAttribute('ayah'));
+  }, 500);
+}, {passive:true});
+pageEl.addEventListener('touchmove', e => {
+  if(!lpTimer) return;
+  const c = e.changedTouches[0];
+  if(Math.hypot(c.clientX - lpX, c.clientY - lpY) > 8) clearLP();
+}, {passive:true});
+pageEl.addEventListener('touchend', () => { if(lpTimer) clearLP(); }, {passive:true});
+// سطح المكتب: زرّ الفأرة الأيمن
+pageEl.addEventListener('contextmenu', e => {
+  const el = ayahAt(e.target);
+  if(!el) return;
+  e.preventDefault();
+  openAyah(+el.getAttribute('surah'), +el.getAttribute('ayah'));
+});
 
 function goto(n){
   const p = Math.max(1, Math.min(TOTAL, n));
@@ -762,7 +993,7 @@ function toggleImmersive(){
   requestAnimationFrame(() => { curEm = null; buildPage(current); autofit(); });
 }
 
-let sx = 0, sy = 0, moved = 0, tracking = false;
+let sx = 0, sy = 0, moved = 0, tracking = false, lpFired = false;
 pageEl.addEventListener('touchstart', e => {
   const c = e.changedTouches[0];
   sx = c.clientX; sy = c.clientY; moved = 0; tracking = true;
@@ -780,6 +1011,8 @@ pageEl.addEventListener('touchend', e => {
   if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60){
     if(dx > 0) nextPage(); else prevPage();   // اتجاه تقليب المصحف
   }else if(moved < 12){
+    if($('asheet').classList.contains('show')){ closeAyah(); return; }
+    if(lpFired){ lpFired = false; return; }
     toggleImmersive();
   }
 });
@@ -799,7 +1032,8 @@ function switchTab(id){
   document.querySelectorAll('.pane').forEach(x => x.classList.toggle('on', x.id === id));
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
   if(id === 'paneTrack') renderTrack();
-  if(id === 'paneIndex' && !$('q').value.trim()) showSuraList();
+  if(id === 'paneIndex' && !$('q').value.trim())
+    (idxMode === 'juz' ? showJuzList : showSuraList)();
 }
 document.querySelectorAll('#tabs button').forEach(b =>
   b.addEventListener('click', () => switchTab(b.dataset.tab)));
@@ -871,21 +1105,12 @@ function renderTrack(){
   const todayN = TRACK.days[dayKey(new Date())] || 0;
   const C = 2 * Math.PI * 44;
 
-  // السجلّ: كلّ صفحة تُحسب مرّةً واحدة، فمجموع الأيام هو المقروء كلّه.
-  // لذلك تكفي أعداد الأيام لاستخراج النسبة التي بلغها في نهاية كلّ يوم.
-  const keys = Object.keys(TRACK.days).sort();
-  let cum = 0;
-  const hist = keys.map(k => {
-    cum += TRACK.days[k];
-    return { k:k, n:TRACK.days[k], pct:Math.round(cum / 604 * 100) };
-  }).reverse();
-
-  const fmt = k => {
-    const [y, m, d] = k.split('-').map(Number);
-    try{
-      // arNum على المخرَج: أرقام التاريخ تخرج لاتينية فتشذّ عن بقية الأرقام
-      return arNum(new Date(y, m - 1, d).toLocaleDateString('ar', { day:'numeric', month:'long' }));
-    }catch(_){ return arNum(d) + '/' + arNum(m); }
+  const notes = loadNotes(), nk = Object.keys(notes);
+  const marks = loadMarks();
+  const suraOf = k => SURAS[k.split(':')[0]] + ' · ' + arNum(k.split(':')[1]);
+  const pageOfKey = k => {
+    const v = verseOf(+k.split(':')[0], +k.split(':')[1]);
+    return v ? v.page : 1;
   };
 
   $('trackBody').innerHTML =
@@ -906,18 +1131,53 @@ function renderTrack(){
       '<div class="stat"><b>' + arNum(TRACK.khatmas) + '</b><span>ختمة كاملة</span></div>' +
     '</div></div>' +
 
-    (hist.length
-      ? '<div class="card"><h3>سجلّ القراءة</h3>' +
-        hist.slice(0, 20).map(r =>
-          '<div class="hrow"><span class="hd">' + fmt(r.k) + '</span>' +
-          '<span class="hn">' + arNum(r.n) + ' صفحة</span>' +
-          '<span class="hp">' + arNum(r.pct) + '٪</span></div>').join('') +
-        (hist.length > 20 ? '<div class="sub" style="opacity:.6;padding-top:8px">وأيام أقدم</div>' : '') +
-        '</div>'
-      : '<div class="card"><h3>سجلّ القراءة</h3><div class="hint" style="padding:10px 0">' +
-        'يبدأ السجلّ مع أوّل صفحة تقرؤها</div></div>') +
+    '<div class="card"><h3>العلامات المرجعية</h3>' +
+      (marks.length
+        ? marks.map(p => '<div class="note"><div class="nh"><b>صفحة ' + arNum(p) + '</b>' +
+            '<button data-goto="' + p + '" title="فتح">←</button>' +
+            '<button data-unmark="' + p + '" title="حذف">×</button></div></div>').join('')
+        : '<div class="hint" style="padding:8px 0">ضع علامةً من زرّ الشريط الأعلى</div>') +
+    '</div>' +
+
+    '<div class="card"><h3>حواشيك على الآيات</h3>' +
+      (nk.length
+        ? nk.map(k => '<div class="note"><div class="nh"><b>' + suraOf(k) + '</b>' +
+            '<button data-goto="' + pageOfKey(k) + '" title="فتح">←</button>' +
+            '<button data-delnote="' + k + '" title="حذف">×</button></div>' +
+            '<p>' + notes[k].replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) +
+            '</p></div>').join('') +
+          '<button class="ghost" id="expNotes">تصدير الحواشي ملفّاً</button>'
+        : '<div class="hint" style="padding:8px 0">اضغط مطوّلاً على آية لتكتب حاشيتك عليها</div>') +
+    '</div>' +
 
     '<button class="danger" id="resetBtn">إعادة الختمة من الصفر</button>';
+
+  $('trackBody').querySelectorAll('[data-goto]').forEach(b =>
+    b.addEventListener('click', () => { switchTab('paneMushaf'); goto(+b.dataset.goto); }));
+  $('trackBody').querySelectorAll('[data-unmark]').forEach(b =>
+    b.addEventListener('click', () => {
+      const m = loadMarks().filter(x => x !== +b.dataset.unmark);
+      saveMarks(m); syncMark(current); renderTrack();
+    }));
+  $('trackBody').querySelectorAll('[data-delnote]').forEach(b =>
+    b.addEventListener('click', () => {
+      const n = loadNotes(); delete n[b.dataset.delnote]; saveNotes(n); renderTrack();
+    }));
+  const exp = $('expNotes');
+  if(exp) exp.addEventListener('click', () => {
+    const n = loadNotes();
+    const txt = Object.keys(n).map(k => {
+      const [su, ay] = k.split(':').map(Number);
+      const v = verseOf(su, ay);
+      return '﴿' + (v ? v.text : '') + '﴾\n[' + SURAS[su] + ': ' + ay + ' — صفحة ' +
+             (v ? v.page : '') + ']\n\n' + n[k] + '\n\n────────────\n';
+    }).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([txt], { type:'text/plain;charset=utf-8' }));
+    a.download = 'حواشي-مصحف-شعبة.txt';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  });
 
   $('resetBtn').addEventListener('click', () => {
     if(!confirm('تُمحى الصفحات المقروءة ويبدأ العدّ من الصفر. أمتابع؟')) return;
@@ -926,6 +1186,38 @@ function renderTrack(){
 }
 
 /* ══════════ الفهرس والبحث ══════════ */
+// بدايات الأجزاء في مصحف المدينة. تحقّقت منها على بيانات شعبة نفسها:
+// الجزء ٢ ← ٢:١٤٢ · الجزء ٣ ← ٢:٢٥٣ · الجزء ٣٠ ← ٧٨:١
+const JUZ = [1,22,42,62,82,102,121,142,162,182,201,222,242,262,282,
+             302,322,342,362,382,402,422,442,462,482,502,522,542,562,582];
+let idxMode = 'suras';
+
+function showJuzList(){
+  const out = $('qOut');
+  out.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  JUZ.forEach((p, i) => {
+    const ayat = PAGES.get(p) || [];
+    const first = ayat[0];
+    const b = document.createElement('button');
+    b.className = 'row';
+    b.innerHTML = '<span class="n">' + arNum(i + 1) + '</span><span class="t"><b>الجزء ' +
+      arNum(i + 1) + '</b><span>صفحة ' + arNum(p) +
+      (first ? ' · ' + SURAS[first.sura] + ' ' + arNum(first.aya) : '') + '</span></span>';
+    b.addEventListener('click', () => { switchTab('paneMushaf'); goto(p); });
+    frag.appendChild(b);
+  });
+  out.appendChild(frag);
+}
+$('segSuras').addEventListener('click', () => {
+  idxMode = 'suras'; $('segSuras').classList.add('on'); $('segJuz').classList.remove('on');
+  $('q').value = ''; showSuraList();
+});
+$('segJuz').addEventListener('click', () => {
+  idxMode = 'juz'; $('segJuz').classList.add('on'); $('segSuras').classList.remove('on');
+  $('q').value = ''; showJuzList();
+});
+
 function suraRow(id, sub){
   const b = document.createElement('button');
   b.className = 'row';
@@ -952,7 +1244,7 @@ $('q').addEventListener('input', () => {
 function runSearch(){
   const out = $('qOut');
   const raw = $('q').value.trim();
-  if(!raw){ showSuraList(); return; }
+  if(!raw){ if(idxMode === 'juz') showJuzList(); else showSuraList(); return; }
   out.innerHTML = '';
 
   const digits = raw.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
