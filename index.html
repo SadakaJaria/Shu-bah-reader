@@ -473,7 +473,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-05e',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-06',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -1454,12 +1454,13 @@ function renderTrack(){
 const RECITERS = [
   { id   : 'sabdulhakam',
     name : 'صابر عبد الحكم',
-    style: 'مرتّل',
     base : 'https://server16.mp3quran.net/The-ten-readings/Rewayat-Sho-bah-A-n-Asim/Sabdulhakam' },
   { id   : 'hthfi',
     name : 'علي الحذيفي',
-    style: 'مرتّل',
     base : 'https://server9.mp3quran.net/hthfi/Rewayat-Sho-bah-A-n-Asim' },
+  { id   : 'deban',
+    name : 'أحمد ديبان',
+    base : 'https://server16.mp3quran.net/deban/Rewayat-Sho-bah-A-n-Asim' },
 ];
 const AUD_KEY = 'shubah:reciter';
 let curRec = null, curSura = 0, autoNext = false, seeking = false;
@@ -1577,7 +1578,7 @@ function openListen(){
     const b = document.createElement('button');
     b.className = 'row' + (rec.id === lsPick.id ? ' on' : '');
     b.innerHTML = '<span class="n">' + arNum(i + 1) + '</span><span class="t"><b>' +
-      rec.name + '</b><span>' + rec.style + ' · شعبة عن عاصم</span></span>';
+      rec.name + '</b><span>رواية شعبة عن عاصم</span></span>';
     b.addEventListener('click', () => {
       lsPick = rec;
       try{ localStorage.setItem(AUD_KEY, rec.id); }catch(_){}
