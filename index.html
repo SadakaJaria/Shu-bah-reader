@@ -326,6 +326,22 @@ body.immersive #tabs{display:none}
 #playbar[hidden]{display:none}
 body.immersive #playbar{display:none}
 
+#lsheet{position:fixed;left:0;right:0;bottom:0;z-index:80;
+  background:var(--bar);border-top:1.5px solid var(--gold);
+  border-radius:20px 20px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.28);
+  padding:14px 14px calc(env(safe-area-inset-bottom) + 14px);
+  transform:translateY(105%);transition:transform .26s cubic-bezier(.2,.8,.3,1);
+  max-height:78vh;overflow-y:auto}
+#lsheet.show{transform:none}
+#lsList .row.on{background:var(--mushaf-shade)}
+#lsList .row.on .n{background:var(--gold);color:#2a2313}
+.ls-play{width:100%;height:56px;margin-top:12px;border-radius:16px;
+  border:none;background:var(--gold);color:#2a2313;cursor:pointer;
+  font-family:var(--font-ui);font-size:17px;font-weight:700}
+.ls-play:active{transform:scale(.98)}
+.ls-note{font-size:12.5px;opacity:.55;color:var(--bar-ink);
+  line-height:1.9;padding:11px 6px 0;text-align:center}
+
 #msg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
   padding:32px;text-align:center;font-size:19px;line-height:1.9;
   color:var(--mushaf-ink);background:var(--mushaf-bg);z-index:50}
@@ -432,6 +448,16 @@ body.immersive #playbar{display:none}
   <button class="ghost" id="ashSaveNote" hidden>حفظ الحاشية</button>
 </div>
 
+<div id="lsheet">
+  <div class="ash-head">
+    <b>الاستماع · رواية شعبة</b>
+    <button id="lsClose" aria-label="إغلاق">×</button>
+  </div>
+  <div id="lsList"></div>
+  <button class="ls-play" id="lsPlay"></button>
+  <div class="ls-note">التلاوات من mp3quran، ومسار كلّ ملفٍّ يصرّح بالرواية.</div>
+</div>
+
 <div id="msg" class="show">جارِ فتح المصحف…</div>
 
 <script>
@@ -447,7 +473,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-05d',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-05e',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -989,7 +1015,7 @@ function closeAyah(){
   $('asheet').classList.remove('show');
   $('backdrop').classList.remove('show');
 }
-$('backdrop').addEventListener('click', closeAyah);
+$('backdrop').addEventListener('click', () => { closeAyah(); closeListen(); });
 $('ashClose').addEventListener('click', closeAyah);
 
 function toast(t){
@@ -1430,6 +1456,10 @@ const RECITERS = [
     name : 'صابر عبد الحكم',
     style: 'مرتّل',
     base : 'https://server16.mp3quran.net/The-ten-readings/Rewayat-Sho-bah-A-n-Asim/Sabdulhakam' },
+  { id   : 'hthfi',
+    name : 'علي الحذيفي',
+    style: 'مرتّل',
+    base : 'https://server9.mp3quran.net/hthfi/Rewayat-Sho-bah-A-n-Asim' },
 ];
 const AUD_KEY = 'shubah:reciter';
 let curRec = null, curSura = 0, autoNext = false, seeking = false;
@@ -1535,14 +1565,45 @@ $('pbToggle').addEventListener('click', () => {
 });
 $('pbClose').addEventListener('click', stopAudio);
 
-$('listenBtn').addEventListener('click', () => {
-  const sura = suraOfPage(current);
-  // نفس السورة تعمل: الزرّ يوقف ويستأنف بدل أن يُعيدها من أوّلها
-  if(curSura === sura && audio.getAttribute('src')){
-    if(audio.paused) audio.play().catch(() => {}); else audio.pause();
+/* ── لوح اختيار القارئ ── */
+let lsPick = null, lsSura = 1;
+
+function openListen(){
+  lsSura = suraOfPage(current);
+  lsPick = pickedReciter();
+  const list = $('lsList');
+  list.innerHTML = '';
+  RECITERS.forEach((rec, i) => {
+    const b = document.createElement('button');
+    b.className = 'row' + (rec.id === lsPick.id ? ' on' : '');
+    b.innerHTML = '<span class="n">' + arNum(i + 1) + '</span><span class="t"><b>' +
+      rec.name + '</b><span>' + rec.style + ' · شعبة عن عاصم</span></span>';
+    b.addEventListener('click', () => {
+      lsPick = rec;
+      try{ localStorage.setItem(AUD_KEY, rec.id); }catch(_){}
+      [...list.children].forEach(x => x.classList.toggle('on', x === b));
+    });
+    list.appendChild(b);
+  });
+  $('lsPlay').textContent = 'استمع إلى سورة ' + SURAS[lsSura];
+  $('lsheet').classList.add('show');
+  $('backdrop').classList.add('show');
+}
+function closeListen(){
+  $('lsheet').classList.remove('show');
+  if(!$('asheet').classList.contains('show')) $('backdrop').classList.remove('show');
+}
+$('listenBtn').addEventListener('click', openListen);
+$('lsClose').addEventListener('click', closeListen);
+$('lsPlay').addEventListener('click', () => {
+  closeListen();
+  // نفس القارئ ونفس السورة تعمل: نستأنف من موضعها لا نُعيدها من أوّلها
+  if(curRec && lsPick && curRec.id === lsPick.id && curSura === lsSura
+     && audio.getAttribute('src')){
+    if(audio.paused) audio.play().catch(() => {});
     return;
   }
-  playSura(pickedReciter(), sura);
+  playSura(lsPick, lsSura);
 });
 
 /* ══════════ الفروق بين روايتي شعبة وحفص ══════════ */
