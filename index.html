@@ -473,7 +473,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-06',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-06b',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -1461,6 +1461,10 @@ const RECITERS = [
   { id   : 'deban',
     name : 'أحمد ديبان',
     base : 'https://server16.mp3quran.net/deban/Rewayat-Sho-bah-A-n-Asim' },
+  // من أرشيف الإنترنت لا من المجمّع، ومعرّف المادّة يحمل الرواية: ‎_Shoaba_‎
+  { id   : 'yousuf',
+    name : 'يوسف بن نوح أحمد',
+    base : 'https://archive.org/download/Al-Quran_Shoaba_tilawat_Yousuf_Ahmad' },
 ];
 const AUD_KEY = 'shubah:reciter';
 let curRec = null, curSura = 0, autoNext = false, seeking = false;
