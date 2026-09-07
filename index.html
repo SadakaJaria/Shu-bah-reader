@@ -204,6 +204,25 @@ body.immersive #tabs{display:none}
 /* المضلّعات شفّافة تماماً، فلا تتلقّى اللمس إلا بهذا */
 #page.svgmode .ayahPolygon{cursor:pointer;pointer-events:all}
 
+/* ── خرطوش اسم السورة في الصفحة ──
+   إطارٌ ذهبيّ بخطٍّ داخليّ رفيع ومعيّنات على الطرفين، على هيئة خرطوش
+   الشريط الأعلى — زخرفةٌ من عندنا لا من المصحف: مصدرنا جرّدها. */
+#page{position:relative}
+.stitle{position:absolute;left:5%;right:5%;pointer-events:none;
+  border:1.5px solid var(--gold);border-radius:9px;
+  box-shadow:inset 0 0 0 2.5px var(--mushaf-bg), inset 0 0 0 3.6px var(--bar-line);
+  opacity:.92}
+/* معيّنان على الطرفين، ومعهما نقطتان أصغر — عقدةٌ مزخرفة لا خطّ أصمّ */
+.stitle::before,.stitle::after{content:"";position:absolute;top:50%;
+  width:8px;height:8px;margin-top:-4px;background:var(--gold);
+  transform:rotate(45deg);box-shadow:0 0 0 2.5px var(--mushaf-bg)}
+.stitle::before{right:-4.5px}
+.stitle::after{left:-4.5px}
+.stitle i{position:absolute;top:50%;width:4px;height:4px;margin-top:-2px;
+  background:var(--gold);transform:rotate(45deg);opacity:.75}
+.stitle i.a{right:7px}
+.stitle i.b{left:7px}
+
 /* ── لوح الآية (بضغطة مطوّلة) ── */
 #backdrop{position:fixed;inset:0;z-index:75;background:rgba(0,0,0,.35);
   opacity:0;pointer-events:none;transition:opacity .22s}
@@ -519,7 +538,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-07e',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-07g',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -937,6 +956,7 @@ async function renderSvg(p){
     if(token !== svgToken) return;
     pageEl.innerHTML = t;
     pageEl.classList.remove('loading');
+    requestAnimationFrame(decorateTitles);
     // ثماني ثوانٍ على الصفحة = قراءة. أقلّ من ذلك تقليبٌ لا قراءة.
     clearTimeout(markTimer);
     markTimer = setTimeout(() => { if(current === p) markRead(p); }, 8000);
@@ -1001,6 +1021,85 @@ function spreadIcon(p){
     '<rect x="12" y="0.7" width="9.3" height="13.6" rx="1.4"' +
     (right ? ' class="on"' : '') + '/>' +
     '<path d="M11 1.6v11.8"/></svg>';
+}
+
+/* ══════════ خرطوش اسم السورة في الصفحة ══════════ */
+/* مصدرنا جرّد العنوان من زخرفة المصحف المطبوع وترك الخطّ وحده، فنرسم
+   حوله خرطوشاً من عندنا بذهبيّ البرنامج.
+
+   وموضعه لا يُقاس بالحبر: نصّ الصفحة كلّه مسارٌ واحد مدموج، فلا يُفصل
+   سطرٌ منه. ولا يُحسب بالأسطر حسبةً ثابتة: صفحتا الفاتحة وأوّل البقرة
+   إحداثيّاتهما مزاحة وأسطرهما أوسع. فنعاير شبكة أسطر كلّ صفحة من
+   مضلّعاتها هي: لكلّ آيةٍ أوّلُ سطرٍ وآخرُه، ولمضلّعها أعلى وأسفل —
+   ومن هذه الأزواج يُستخرج ارتفاع السطر ومبدؤه بانحدارٍ أصغريّ. */
+function titleBand(p, svg){
+  const ayat = PAGES.get(p) || [];
+  const firsts = ayat.filter(a => a.aya === 1);
+  if(!firsts.length) return [];
+
+  const poly = {};
+  svg.querySelectorAll('.ayahPolygon').forEach(e => {
+    const k = e.getAttribute('surah') + ':' + e.getAttribute('ayah');
+    const b = e.getBBox();
+    const q = poly[k];
+    poly[k] = q ? {top: Math.min(q.top, b.y), bot: Math.max(q.bot, b.y + b.height)}
+                : {top: b.y, bot: b.y + b.height};
+  });
+
+  // نقاطٌ تربط رقم السطر بموضعه: أعلى المضلّع رأسُ سطره، وأسفله رأس ما بعده
+  const X = [], Y = [];
+  ayat.forEach(a => {
+    const q = poly[a.sura + ':' + a.aya];
+    if(!q) return;
+    X.push(a.ls - 1); Y.push(q.top);
+    X.push(a.le);     Y.push(q.bot);
+  });
+  if(X.length < 4) return [];
+  const n = X.length, sx = X.reduce((u,v)=>u+v,0), sy = Y.reduce((u,v)=>u+v,0);
+  let sxx = 0, sxy = 0;
+  for(let i = 0; i < n; i++){ sxx += X[i]*X[i]; sxy += X[i]*Y[i]; }
+  const den = n*sxx - sx*sx;
+  if(!den) return [];
+  const b = (n*sxy - sx*sy) / den, a0 = (sy - b*sx) / n;
+  if(!(b > 0)) return [];
+
+  // صفحتا الفاتحة وأوّل البقرة: صفحة الافتتاح، عنوانها أعلى من سطرٍ
+  // واحد فوق البسملة، فالشبكة لا تمتدّ إليه. قِيس حبرهما مسحاً بصريّاً.
+  if(p <= 2) return [{y1: -64, y2: -38}];
+
+  return firsts.map(f => {
+    // الفاتحة بسملتها آيتها الأولى، والتوبة بلا بسملة: العنوان سطرٌ واحد فوق.
+    // وما عداهما بسملتُه سطرٌ مستقلّ، فالعنوان سطران فوق.
+    const T = (f.sura === 1 || f.sura === 9) ? f.ls - 1 : f.ls - 2;
+    if(T < 1) return null;
+    return {y1: a0 + b*(T-1), y2: a0 + b*T};
+  }).filter(Boolean);
+}
+
+function decorateTitles(){
+  pageEl.querySelectorAll('.stitle').forEach(e => e.remove());
+  const svg = pageEl.querySelector('svg');
+  if(!svg || !svg.getScreenCTM) return;
+  const bands = titleBand(current, svg);
+  if(!bands.length) return;
+  const ctm = svg.getScreenCTM();
+  if(!ctm) return;
+  const host = pageEl.getBoundingClientRect();
+
+  bands.forEach(band => {
+    const p1 = new DOMPoint(0, band.y1).matrixTransform(ctm);
+    const p2 = new DOMPoint(0, band.y2).matrixTransform(ctm);
+    let top = Math.min(p1.y, p2.y), h = Math.abs(p2.y - p1.y);
+    if(!(h > 4)) return;
+    const pad = h * 0.09;
+    top -= pad; h += pad * 2;
+    const d = document.createElement('div');
+    d.className = 'stitle';
+    d.style.top = (top - host.top) + 'px';
+    d.style.height = h + 'px';
+    d.innerHTML = '<i class="a"></i><i class="b"></i>';
+    pageEl.appendChild(d);
+  });
 }
 
 /* ══════════ العلامات المرجعية ══════════ */
@@ -1304,6 +1403,7 @@ const prevPage = () => goto(current - 1);
 function toggleImmersive(){
   const on = !document.body.classList.contains('immersive');
   document.body.classList.toggle('immersive', on);
+  redecorate();
   // ملء الشاشة الحقيقي مكسبٌ إضافي لا شرط: آيفون لا يدعمه، وبعض السياقات
   // ترفضه. نبتلع الرفض (وعدٌ لا استثناء) فالإخفاء وحده يكفي.
   const swallow = () => {};
@@ -1844,6 +1944,14 @@ function closeListen(){
   if(!$('asheet').classList.contains('show')) $('backdrop').classList.remove('show');
   syncNav();
 }
+let redecTimer = null;
+function redecorate(){
+  clearTimeout(redecTimer);
+  redecTimer = setTimeout(() => requestAnimationFrame(decorateTitles), 80);
+}
+addEventListener('resize', redecorate);
+addEventListener('orientationchange', redecorate);
+
 $('listenBtn').addEventListener('click', openListen);
 $('lsClose').addEventListener('click', closeListen);
 $('lsPlay').addEventListener('click', () => {
