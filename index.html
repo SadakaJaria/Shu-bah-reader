@@ -63,59 +63,53 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 #reader{position:fixed;inset:0;display:flex;flex-direction:column;
   background:radial-gradient(130% 90% at 50% 42%,var(--mushaf-shade),transparent 70%),var(--mushaf-bg)}
 
-/* ── الشريط العلوي: فهرس · السورة والصفحة · بحث ── */
-#top{flex:0 0 auto;z-index:20;display:flex;align-items:center;gap:2px;
-  padding:calc(env(safe-area-inset-top) + 5px) 4px 5px;
-  background:var(--bar);border-bottom:1px solid var(--bar-line)}
-#top button{flex:0 0 auto;width:37px;height:40px;
+/* ── الشريط العلوي: سطران بلا فاصلٍ بينهما — كتلةٌ واحدة تحتها خطٌّ واحد.
+   الأعلى: الأزرار واسم السورة. والأدنى: الجزء والحزب والربع والصفحة.
+   وهو ثلاثة أعمدة: طرفان متساويان مهما اختلف عدد الأزرار فيهما، فيقع
+   اسم السورة في وسط الشريط تماماً فوق منتصف سطر الجزء. ── */
+#top{flex:0 0 auto;z-index:20;display:grid;
+  grid-template-columns:1fr minmax(0,auto) 1fr;align-items:center;
+  padding:calc(env(safe-area-inset-top) + 4px) 4px 3px;
+  background:var(--bar)}
+/* بلا min-width:0 هنا عمداً: العمودان الطرفيّان يجب أن يحفظا عرض أزرارهما،
+   فيكون الاسم وحده هو الذي يضيق ويُختصر بالنقاط، لا الأزرار تركب عليه. */
+#top .side{display:flex;align-items:center;gap:1px}
+#top .side.end{justify-content:flex-end}
+#top button{flex:0 0 auto;width:37px;height:38px;
   display:flex;align-items:center;justify-content:center;
   border:none;background:transparent;color:var(--gold-strong);cursor:pointer;border-radius:12px}
 #top button:active{transform:scale(.92)}
 #top button svg{width:23px;height:23px;fill:none;stroke:currentColor;
   stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#label{flex:1;min-width:0;text-align:center;overflow:hidden}
-/* خرطوش اسم السورة — على هيئة إطار عنوان السورة في المصحف:
-   حدٌّ ذهبي، وخطٌّ داخلي رفيع، ومعيّنان على الطرفين. */
-.cart{position:relative;display:inline-flex;align-items:center;
-  max-width:calc(100% - 12px);padding:4px 8px;
-  border:1.5px solid var(--gold);border-radius:8px;
-  box-shadow:inset 0 0 0 2.5px var(--bar), inset 0 0 0 3.5px var(--bar-line);
-  color:var(--gold-strong);vertical-align:middle}
-.cart::before,.cart::after{content:"";position:absolute;top:50%;
-  width:7px;height:7px;margin-top:-3.5px;background:var(--gold);transform:rotate(45deg)}
-.cart::before{right:-4.5px}
-.cart::after{left:-4.5px}
-.cart .nm{font-size:clamp(13px,4.2vw,15.5px);font-weight:700;
+/* اسم السورة وحده في وسط السطر الأعلى — بلا إطارٍ يحبسه، فيتّسع له الشريط
+   كلّه ويكبر الخطّ. رقم الصفحة نزل إلى سطر الجزء والحزب. */
+#label{min-width:0;text-align:center;padding:0 4px;
+  color:var(--gold-strong);font-weight:800;
+  font-size:clamp(17px,5.8vw,21px);line-height:1.3;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cart.long .nm{font-size:clamp(9px,3.1vw,13.5px);letter-spacing:-.25px}
-.cart.long2 .nm{font-size:clamp(7.2px,2.55vw,12.5px);letter-spacing:-.4px}
-.cart .pfx{font-style:normal}
-@media (max-width:379px){.cart .pfx{display:none}}
-@media (max-width:379px){
-  #top button{width:33px}
-  #top button svg{width:21px;height:21px}
-}
-.cart.long .sep{margin:0 4px}
-.cart .sep{flex:0 0 auto;width:1px;height:15px;margin:0 7px;background:var(--bar-line)}
-.cart .pg{flex:0 0 auto;font-size:15px;font-weight:700;opacity:.85}
+#label .pfx{font-style:normal;font-weight:700;font-size:.8em;opacity:.6}
+/* الضيق سببه تعدّد السور لا طول الاسم، فالمقاس يتبع عددها */
+#label.long{font-size:clamp(12.5px,4.2vw,16.5px);letter-spacing:-.15px}
+#label.long2{font-size:clamp(10.5px,3.4vw,14px);letter-spacing:-.3px}
+@media (max-width:359px){#label .pfx{display:none}}
 /* المصحف المفتوح: ورقةٌ نصفها مملوء تدلّ على جهة الصفحة.
-   خارج الخرطوش وبجانب زرّ الاستماع، بأكبر ما يتّسع له الشريط. */
+   بجانب زرّ الاستماع، بأكبر ما يتّسع له الشريط. */
 #spread{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
-  width:clamp(26px,9vw,40px);padding:0 1px}
+  width:clamp(28px,9.5vw,44px);padding:0 2px}
 #spread svg{width:100%;height:auto;aspect-ratio:22/15;overflow:visible;display:block}
 #spread rect{fill:none;stroke:var(--gold);stroke-width:1.15;opacity:.45}
 #spread rect.on{fill:var(--gold);stroke:var(--gold);opacity:1}
 #spread path{stroke:var(--gold);stroke-width:1.15;opacity:.45}
 
-
-/* شريط الجزء والحزب: سطرٌ رفيع كهامش المصحف المطبوع */
+/* السطر الأدنى: الأرقام غامقةٌ قويّة، والكلمات خافتةٌ حولها */
 #juzbar{flex:0 0 auto;text-align:center;font-family:var(--font-ui);
-  font-size:11.5px;font-weight:700;letter-spacing:.2px;
-  color:var(--gold-strong);opacity:.72;
-  padding:3px 8px 4px;background:var(--bar);
+  font-size:clamp(11.5px,3.7vw,13.5px);letter-spacing:.1px;
+  color:var(--gold-strong);white-space:nowrap;overflow:hidden;
+  padding:0 8px 5px;background:var(--bar);
   border-bottom:1px solid var(--bar-line)}
-#juzbar b{font-weight:700}
-#juzbar span{opacity:.45;margin:0 6px}
+#juzbar b{font-weight:800;font-size:1.1em}
+#juzbar i{font-style:normal;font-weight:700;opacity:.6}
+#juzbar span{opacity:.3;margin:0 5px;font-weight:700}
 
 /* ── الصفحة: خمسة عشر سطراً ── */
 #page{flex:1 1 auto;min-height:0;position:relative;
@@ -412,20 +406,24 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 
     <section class="pane on" id="paneMushaf">
       <div id="top">
-        <button id="themeBtn" aria-label="الوضع النهاري والليلي">
-          <svg id="themeIcon" viewBox="0 0 24 24"></svg>
-        </button>
-        <button id="dlBtn" aria-label="تحميل المصحف على الجهاز" hidden>
-          <svg viewBox="0 0 24 24"><path d="M12 3v12M7.5 10.5L12 15l4.5-4.5M4 19h16"/></svg>
-        </button>
+        <div class="side">
+          <button id="themeBtn" aria-label="الوضع النهاري والليلي">
+            <svg id="themeIcon" viewBox="0 0 24 24"></svg>
+          </button>
+          <button id="dlBtn" aria-label="تحميل المصحف على الجهاز" hidden>
+            <svg viewBox="0 0 24 24"><path d="M12 3v12M7.5 10.5L12 15l4.5-4.5M4 19h16"/></svg>
+          </button>
+        </div>
         <div id="label"></div>
-        <button id="listenBtn" aria-label="الاستماع">
-          <svg viewBox="0 0 24 24"><path d="M4 9v6h3.5L12 19V5L7.5 9zM16 9.5a3.5 3.5 0 0 1 0 5M18.5 7a7 7 0 0 1 0 10"/></svg>
-        </button>
-        <span id="spread" aria-hidden="true"></span>
-        <button id="markBtn" aria-label="علامة مرجعية">
-          <svg id="markIcon" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>
-        </button>
+        <div class="side end">
+          <span id="spread" aria-hidden="true"></span>
+          <button id="listenBtn" aria-label="الاستماع">
+            <svg viewBox="0 0 24 24"><path d="M4 9v6h3.5L12 19V5L7.5 9zM16 9.5a3.5 3.5 0 0 1 0 5M18.5 7a7 7 0 0 1 0 10"/></svg>
+          </button>
+          <button id="markBtn" aria-label="علامة مرجعية">
+            <svg id="markIcon" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>
+          </button>
+        </div>
       </div>
       <div id="juzbar"></div>
       <div id="page"></div>
@@ -545,7 +543,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-07m',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-08a',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -1010,17 +1008,16 @@ function setLabel(p){
   const one = names.length === 1;
   const txt = one ? names[0] : names.join(' · ');
   // الضيق سببه تعدّد السور لا طول الاسم، فالمقاس يتبع عددها
-  const tier = names.length >= 3 ? ' long long2' : names.length === 2 ? ' long' : '';
+  labelEl.className = names.length >= 3 ? 'long long2' : names.length === 2 ? 'long' : '';
+  labelEl.innerHTML = (one ? '<i class="pfx">سورة </i>' : '') + txt;
+  // الربع يُكتب كسراً كما في المصحف: رأس الحزب بلا علامة ثمّ ١/٤ و٢/٤ و٣/٤
   const jh = juzHizb(p);
-  const frac = jh && jh.rub > 1
-    ? '<span>·</span>' + arNum(jh.rub - 1) + '/' + arNum(4) : '';
-  $('juzbar').innerHTML = jh
-    ? 'الجزء <b>' + arNum(jh.juz) + '</b><span>·</span>الحزب <b>' + arNum(jh.hizb) +
-      '</b>' + frac
-    : '';
-  labelEl.innerHTML = '<span class="cart' + tier +
-    '"><span class="nm">' + (one ? '<i class="pfx">سورة </i>' : '') + txt +
-    '</span><i class="sep"></i><span class="pg">' + arNum(p) + '</span></span>';
+  const dot = '<span>·</span>';
+  const frac = jh && jh.rub > 1 ? dot + '<b>' + arNum(jh.rub - 1) + '/' + arNum(4) + '</b>' : '';
+  $('juzbar').innerHTML = (jh
+    ? '<i>الجزء</i> <b>' + arNum(jh.juz) + '</b>' + dot +
+      '<i>الحزب</i> <b>' + arNum(jh.hizb) + '</b>' + frac + dot
+    : '') + '<i>صفحة</i> <b>' + arNum(p) + '</b>';
   $('spread').innerHTML = spreadIcon(p);
   syncMark(p);
 }
