@@ -87,18 +87,25 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 .cart::after{left:-4.5px}
 .cart .nm{font-size:clamp(13px,4.2vw,15.5px);font-weight:700;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cart.long .nm{font-size:clamp(9.5px,2.9vw,13px);letter-spacing:-.3px}
-.cart.long .sep{margin:0 5px}
+.cart.long .nm{font-size:clamp(9px,3.1vw,13.5px);letter-spacing:-.25px}
+.cart.long2 .nm{font-size:clamp(7.2px,2.55vw,12.5px);letter-spacing:-.4px}
+.cart .pfx{font-style:normal}
+@media (max-width:379px){.cart .pfx{display:none}}
+@media (max-width:379px){
+  #top button{width:33px}
+  #top button svg{width:21px;height:21px}
+}
+.cart.long .sep{margin:0 4px}
 .cart .sep{flex:0 0 auto;width:1px;height:15px;margin:0 7px;background:var(--bar-line)}
 .cart .pg{flex:0 0 auto;font-size:15px;font-weight:700;opacity:.85}
-.cart .spread{flex:0 0 auto;width:clamp(13px,4vw,17px);height:auto;
-  aspect-ratio:22/15;margin-right:clamp(4px,1.3vw,7px);
-  overflow:visible}
-.cart .spread rect{fill:none;stroke:var(--gold);stroke-width:1.1;opacity:.5}
-.cart .spread rect.on{fill:var(--gold);stroke:var(--gold);opacity:1}
-.cart .spread path{stroke:var(--gold);stroke-width:1.1;opacity:.5}
-.cart.long .spread{width:clamp(11px,3.4vw,15px);margin-right:clamp(3px,1vw,5px)}
-@media (max-width:345px){.cart .spread{display:none}}
+/* المصحف المفتوح: ورقةٌ نصفها مملوء تدلّ على جهة الصفحة.
+   خارج الخرطوش وبجانب زرّ الاستماع، بأكبر ما يتّسع له الشريط. */
+#spread{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  width:clamp(26px,9vw,40px);padding:0 1px}
+#spread svg{width:100%;height:auto;aspect-ratio:22/15;overflow:visible;display:block}
+#spread rect{fill:none;stroke:var(--gold);stroke-width:1.15;opacity:.45}
+#spread rect.on{fill:var(--gold);stroke:var(--gold);opacity:1}
+#spread path{stroke:var(--gold);stroke-width:1.15;opacity:.45}
 
 body.immersive #top{display:none}
 
@@ -390,6 +397,7 @@ body.immersive #playbar{display:none}
         <button id="listenBtn" aria-label="الاستماع">
           <svg viewBox="0 0 24 24"><path d="M4 9v6h3.5L12 19V5L7.5 9zM16 9.5a3.5 3.5 0 0 1 0 5M18.5 7a7 7 0 0 1 0 10"/></svg>
         </button>
+        <span id="spread" aria-hidden="true"></span>
         <button id="markBtn" aria-label="علامة مرجعية">
           <svg id="markIcon" viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>
         </button>
@@ -511,7 +519,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-07c',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-07e',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -972,11 +980,14 @@ function render(p){
 function setLabel(p){
   const ayat = PAGES.get(p) || [];
   const names = [...new Set(ayat.map(a => SURAS[a.sura]))];
-  const txt = names.length === 1 ? 'سورة ' + names[0] : names.join(' · ');
-  labelEl.innerHTML = '<span class="cart' + (txt.length > 18 ? ' long' : '') +
-    '"><span class="nm">' + txt +
-    '</span><i class="sep"></i><span class="pg">' + arNum(p) + '</span>' +
-    spreadIcon(p) + '</span>';
+  const one = names.length === 1;
+  const txt = one ? names[0] : names.join(' · ');
+  // الضيق سببه تعدّد السور لا طول الاسم، فالمقاس يتبع عددها
+  const tier = names.length >= 3 ? ' long long2' : names.length === 2 ? ' long' : '';
+  labelEl.innerHTML = '<span class="cart' + tier +
+    '"><span class="nm">' + (one ? '<i class="pfx">سورة </i>' : '') + txt +
+    '</span><i class="sep"></i><span class="pg">' + arNum(p) + '</span></span>';
+  $('spread').innerHTML = spreadIcon(p);
   syncMark(p);
 }
 
