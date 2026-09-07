@@ -63,17 +63,17 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 #top{flex:0 0 auto;z-index:20;display:flex;align-items:center;gap:2px;
   padding:calc(env(safe-area-inset-top) + 5px) 4px 5px;
   background:var(--bar);border-bottom:1px solid var(--bar-line)}
-#top button{flex:0 0 auto;width:40px;height:40px;
+#top button{flex:0 0 auto;width:37px;height:40px;
   display:flex;align-items:center;justify-content:center;
   border:none;background:transparent;color:var(--gold-strong);cursor:pointer;border-radius:12px}
 #top button:active{transform:scale(.92)}
-#top button svg{width:25px;height:25px;fill:none;stroke:currentColor;
+#top button svg{width:23px;height:23px;fill:none;stroke:currentColor;
   stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 #label{flex:1;min-width:0;text-align:center;overflow:hidden}
 /* خرطوش اسم السورة — على هيئة إطار عنوان السورة في المصحف:
    حدٌّ ذهبي، وخطٌّ داخلي رفيع، ومعيّنان على الطرفين. */
 .cart{position:relative;display:inline-flex;align-items:center;
-  max-width:calc(100% - 14px);padding:4px 10px;
+  max-width:calc(100% - 12px);padding:4px 8px;
   border:1.5px solid var(--gold);border-radius:8px;
   box-shadow:inset 0 0 0 2.5px var(--bar), inset 0 0 0 3.5px var(--bar-line);
   color:var(--gold-strong);vertical-align:middle}
@@ -81,8 +81,9 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
   width:7px;height:7px;margin-top:-3.5px;background:var(--gold);transform:rotate(45deg)}
 .cart::before{right:-4.5px}
 .cart::after{left:-4.5px}
-.cart .nm{font-size:15.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cart.long .nm{font-size:clamp(11.5px,3.4vw,13px);letter-spacing:-.2px}
+.cart .nm{font-size:clamp(13px,4.2vw,15.5px);font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cart.long .nm{font-size:clamp(9.5px,2.9vw,13px);letter-spacing:-.3px}
 .cart.long .sep{margin:0 5px}
 .cart .sep{flex:0 0 auto;width:1px;height:15px;margin:0 7px;background:var(--bar-line)}
 .cart .pg{flex:0 0 auto;font-size:15px;font-weight:700;opacity:.85}
@@ -328,6 +329,20 @@ body.immersive #tabs{display:none}
 #playbar[hidden]{display:none}
 body.immersive #playbar{display:none}
 
+#dsheet{position:fixed;left:0;right:0;bottom:0;z-index:80;
+  background:var(--bar);border-top:1.5px solid var(--gold);
+  border-radius:20px 20px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.28);
+  padding:14px 14px calc(env(safe-area-inset-bottom) + 14px);
+  transform:translateY(105%);transition:transform .26s cubic-bezier(.2,.8,.3,1)}
+#dsheet.show{transform:none}
+.dl-say{font-family:var(--font-ui);font-size:14.5px;line-height:1.95;
+  color:var(--bar-ink);opacity:.8;padding:4px 4px 12px}
+.dl-bar{height:8px;border-radius:4px;background:var(--bar-line);overflow:hidden}
+.dl-bar i{display:block;height:100%;width:0;background:var(--gold);
+  border-radius:4px;transition:width .25s ease}
+.dl-num{font-family:var(--font-ui);font-size:13px;font-weight:700;
+  color:var(--gold-strong);text-align:center;padding:9px 0 2px;min-height:20px}
+
 #lsheet{position:fixed;left:0;right:0;bottom:0;z-index:80;
   background:var(--bar);border-top:1.5px solid var(--gold);
   border-radius:20px 20px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.28);
@@ -356,6 +371,9 @@ body.immersive #playbar{display:none}
       <div id="top">
         <button id="themeBtn" aria-label="الوضع النهاري والليلي">
           <svg id="themeIcon" viewBox="0 0 24 24"></svg>
+        </button>
+        <button id="dlBtn" aria-label="تحميل المصحف على الجهاز" hidden>
+          <svg viewBox="0 0 24 24"><path d="M12 3v12M7.5 10.5L12 15l4.5-4.5M4 19h16"/></svg>
         </button>
         <div id="label"></div>
         <button id="listenBtn" aria-label="الاستماع">
@@ -447,6 +465,17 @@ body.immersive #playbar{display:none}
   <button class="ghost" id="ashSaveNote" hidden>حفظ الحاشية</button>
 </div>
 
+<div id="dsheet">
+  <div class="ash-head">
+    <b>حفظ المصحف على الجهاز</b>
+    <button id="dlClose" aria-label="إغلاق">×</button>
+  </div>
+  <p class="dl-say" id="dlSay"></p>
+  <div class="dl-bar"><i id="dlFill"></i></div>
+  <div class="dl-num" id="dlNum"></div>
+  <button class="ls-play" id="dlGo"></button>
+</div>
+
 <div id="lsheet">
   <div class="ash-head">
     <b>الاستماع · رواية شعبة</b>
@@ -471,7 +500,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-06c',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-07',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -1016,7 +1045,7 @@ function closeAyah(){
   if(!$('lsheet').classList.contains('show')) $('backdrop').classList.remove('show');
   syncNav();
 }
-$('backdrop').addEventListener('click', () => { closeAyah(); closeListen(); });
+$('backdrop').addEventListener('click', () => { closeAyah(); closeListen(); closeDownload(); });
 $('ashClose').addEventListener('click', closeAyah);
 
 function toast(t){
@@ -1309,6 +1338,141 @@ function switchTab(id){
 document.querySelectorAll('#tabs button').forEach(b =>
   b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
+/* ══════════ حفظ المصحف على الجهاز ══════════ */
+/* البيانات (النصّ والفهرس والبحث والفروق) محفوظةٌ كاملةً منذ أوّل فتحة —
+   عامل الخدمة يخزّنها عند التثبيت. الناقص صفحات المصحف وحدها: سبعون ميغا
+   لا تُنزَّل من تلقائها لئلّا تُثقل جهازاً وشبكةً بلا إذن. هذا الزرّ يُنزّلها
+   دفعةً واحدة، فيفتح البرنامج بعدها بلا إنترنت أصلاً.
+
+   يعمل بالإضافة إلى الحفظ التلقائي: ما قرأه محفوظٌ سلفاً فلا يُعاد جلبه. */
+const DL_KEY = 'shubah:offline';
+let dlRun = false, dlStop = false;
+
+const dlDone = () => { try{ return localStorage.getItem(DL_KEY) === 'all'; }catch(_){ return false; } };
+
+/* أيّ الصفحات ناقصة؟ نسأل المخزن نفسه لا ذاكرتنا: قد يكون الأب حذف
+   بيانات التطبيق، أو حُذف بعضها تحت ضغط المساحة. */
+async function missingPages(){
+  if(!('caches' in window)) return null;
+  try{
+    const c = await caches.open('shubah-pages-v1');
+    const have = new Set((await c.keys()).map(r => r.url.replace(/^.*\//, '')));
+    const out = [];
+    for(let p = 1; p <= TOTAL; p++){
+      const f = pageUrl(p).replace(/^.*\//, '');
+      if(!have.has(f)) out.push(p);
+    }
+    return out;
+  }catch(_){ return null; }
+}
+
+const pageUrl = p => CFG.SVG_DIR + '/' + String(p).padStart(3, '0') + '.svg.br';
+
+async function cachePage(p){
+  const c = await caches.open('shubah-pages-v1');
+  const url = pageUrl(p);
+  if(await c.match(url)) return;
+  const r = await fetch(url);
+  if(!r.ok) throw new Error('page ' + p);
+  await c.put(url, r);
+}
+
+function dlSetBtn(){
+  // الزرّ لعملٍ يُفعل مرّةً: يختفي متى تمّ، فلا يزحم شريطاً ضيّقاً كلّ يوم
+  $('dlBtn').hidden = dlDone() || !('caches' in window);
+}
+
+async function openDownload(){
+  $('dsheet').classList.add('show');
+  $('backdrop').classList.add('show');
+  syncNav();
+  const miss = await missingPages();
+  if(miss === null){
+    $('dlSay').textContent = 'هذا المتصفّح لا يدعم الحفظ على الجهاز.';
+    $('dlGo').hidden = true; return;
+  }
+  dlShow(miss);
+}
+
+function dlShow(miss){
+  const n = miss.length;
+  $('dlGo').hidden = false;
+  $('dlGo').disabled = false;
+  if(!n){
+    $('dlSay').textContent = 'المصحف كامل على الجهاز. يفتح البرنامج ويُقرأ بلا إنترنت.';
+    $('dlNum').textContent = '';
+    $('dlFill').style.width = '100%';
+    $('dlGo').textContent = 'تمّ';
+    $('dlGo').disabled = true;
+    try{ localStorage.setItem(DL_KEY, 'all'); }catch(_){}
+    dlSetBtn();
+    return;
+  }
+  const mb = Math.round(n * 0.116);      // متوسّط الصفحة ١١٦ ك.ب مضغوطة
+  $('dlSay').innerHTML = 'يبقى ' + arNum(n) + ' صفحة من ' + arNum(TOTAL) +
+    ' — نحو <b>' + arNum(mb) + ' ميغابايت</b>.<br>' +
+    'يُفضَّل على شبكة واي‑فاي. ويكفي مرّةً واحدة: بعدها يعمل البرنامج كلّه بلا إنترنت.';
+  $('dlNum').textContent = '';
+  $('dlFill').style.width = ((TOTAL - n) / TOTAL * 100) + '%';
+  $('dlGo').textContent = 'ابدأ التحميل';
+}
+
+function closeDownload(){
+  dlStop = true;
+  $('dsheet').classList.remove('show');
+  if(!$('asheet').classList.contains('show') && !$('lsheet').classList.contains('show'))
+    $('backdrop').classList.remove('show');
+  syncNav();
+}
+
+async function runDownload(){
+  const miss = await missingPages();
+  if(!miss || !miss.length){ dlShow(miss || []); return; }
+
+  // بلا هذا قد يمحو أندرويد المخزن عند ضيق المساحة، فيضيع تحميلُ ساعة
+  try{ navigator.storage && navigator.storage.persist && await navigator.storage.persist(); }catch(_){}
+
+  dlRun = true; dlStop = false;
+  $('dlGo').textContent = 'إيقاف';
+  let done = 0, failed = 0;
+  const total = miss.length;
+  const tick = () => {
+    const all = TOTAL - total + done;
+    $('dlFill').style.width = (all / TOTAL * 100) + '%';
+    $('dlNum').textContent = arNum(all) + ' من ' + arNum(TOTAL) +
+      (failed ? ' · تعذّر ' + arNum(failed) : '');
+  };
+  tick();
+
+  // ستّة معاً: يملأ الشبكة ولا يخنق هاتفاً قديماً
+  const queue = miss.slice();
+  async function worker(){
+    while(queue.length && !dlStop){
+      const p = queue.shift();
+      try{ await cachePage(p); }catch(_){ failed++; }
+      done++; tick();
+    }
+  }
+  await Promise.all(Array.from({length: 6}, worker));
+
+  dlRun = false;
+  const left = await missingPages();
+  if(dlStop && left && left.length){
+    dlShow(left);
+    $('dlGo').textContent = 'أكمل التحميل';
+  }else{
+    dlShow(left || []);
+    if(!left || !left.length) toast('المصحف كامل على الجهاز');
+  }
+}
+
+$('dlBtn').addEventListener('click', openDownload);
+$('dlClose').addEventListener('click', closeDownload);
+$('dlGo').addEventListener('click', () => {
+  if(dlRun){ dlStop = true; $('dlGo').textContent = 'يتوقّف…'; }
+  else runDownload();
+});
+
 /* ══════════ زرّ الرجوع في أندرويد ══════════ */
 /* بلا هذا يخرج الأب من البرنامج بضغطةٍ واحدة وهو في تبويبٍ آخر أو لوحٍ
    مفتوح. القاعدة: الرجوع يُعيده إلى صفحة المصحف، ولا يخرج إلّا منها.
@@ -1322,7 +1486,8 @@ let navBusy = false;   // داخل رجوعٍ نحن طلبناه: لا تتصر
 function atHome(){
   return currentTab === 'paneMushaf'
       && !$('asheet').classList.contains('show')
-      && !$('lsheet').classList.contains('show');
+      && !$('lsheet').classList.contains('show')
+      && !$('dsheet').classList.contains('show');
 }
 
 function syncNav(){
@@ -1345,6 +1510,7 @@ window.addEventListener('popstate', () => {
   navBusy = true;                           // امنع syncNav من دفعٍ جديد
   closeAyah();
   closeListen();
+  closeDownload();
   if(currentTab !== 'paneMushaf') switchTab('paneMushaf');
   navBusy = false;
 });
@@ -1929,6 +2095,7 @@ async function preloadFonts(){
   loadTrack();
   if('serviceWorker' in navigator)
     navigator.serviceWorker.register('sw.js').catch(() => {});
+  dlSetBtn();
   try{
     await loadQuran();
   }catch(_){
