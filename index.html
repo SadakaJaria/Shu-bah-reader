@@ -107,7 +107,6 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 #spread rect.on{fill:var(--gold);stroke:var(--gold);opacity:1}
 #spread path{stroke:var(--gold);stroke-width:1.15;opacity:.45}
 
-body.immersive #top{display:none}
 
 /* شريط الجزء والحزب: سطرٌ رفيع كهامش المصحف المطبوع */
 #juzbar{flex:0 0 auto;text-align:center;font-family:var(--font-ui);
@@ -117,7 +116,6 @@ body.immersive #top{display:none}
   border-bottom:1px solid var(--bar-line)}
 #juzbar b{font-weight:700}
 #juzbar span{opacity:.45;margin:0 6px}
-body.immersive #juzbar{display:none}
 
 /* ── الصفحة: خمسة عشر سطراً ── */
 #page{flex:1 1 auto;min-height:0;position:relative;
@@ -175,7 +173,6 @@ body.immersive #juzbar{display:none}
 /* التبويب المختار: خلفية ذهبية صريحة لا خطّ رفيع — تُرى من بعيد */
 #tabs button.on{opacity:1;color:var(--gold-strong);background:var(--mushaf-shade)}
 #tabs button.on svg{stroke-width:2.3}
-body.immersive #tabs{display:none}
 
 /* رأس اللوح */
 .pane-head{flex:0 0 auto;display:flex;align-items:center;gap:6px;
@@ -374,7 +371,6 @@ body.immersive #tabs{display:none}
   width:15px;height:15px;border-radius:50%;background:var(--gold);border:none;margin-top:-5.5px}
 #pbSeek::-moz-range-thumb{width:15px;height:15px;border-radius:50%;
   background:var(--gold);border:none}
-body.immersive #playbar{display:none}
 
 #dsheet{position:fixed;left:0;right:0;bottom:0;z-index:80;
   background:var(--bar);border-top:1.5px solid var(--gold);
@@ -549,7 +545,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-07j',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-07l',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -1165,6 +1161,7 @@ function openAyah(su, ay){
   $('ashNoteBox').hidden = true;
   $('ashSaveNote').hidden = true;
   $('ashNote').textContent = notes[ashKey] ? 'تعديل الحاشية' : 'حاشية';
+  markSheet();
   showAyahDiff(su, ay);
   $('asheet').classList.add('show');
   $('backdrop').classList.add('show');
@@ -1200,7 +1197,12 @@ function closeAyah(){
   if(!$('lsheet').classList.contains('show')) $('backdrop').classList.remove('show');
   syncNav();
 }
-$('backdrop').addEventListener('click', () => { closeAyah(); closeListen(); closeDownload(); });
+let sheetAt = 0;
+const markSheet = () => { sheetAt = Date.now(); };
+$('backdrop').addEventListener('click', () => {
+  if(Date.now() - sheetAt < 400) return;
+  closeAyah(); closeListen(); closeDownload();
+});
 $('ashClose').addEventListener('click', closeAyah);
 
 function toast(t){
@@ -1418,29 +1420,6 @@ function gotoAyah(su, ay, page){
 const nextPage = () => goto(current + 1);
 const prevPage = () => goto(current - 1);
 
-/* ── لمسةٌ على الصفحة: الشاشة كلّها للمصحف ──
-   إخفاء الشريط يزيد الارتفاع المتاح، فتُختار سعة سطر أضيق ويكبر الخطّ.
-   لذلك نُعيد بناء الصفحة بعد التبديل لا الضبط وحده. */
-function toggleImmersive(){
-  const on = !document.body.classList.contains('immersive');
-  document.body.classList.toggle('immersive', on);
-  redecorate();
-  // ملء الشاشة الحقيقي مكسبٌ إضافي لا شرط: آيفون لا يدعمه، وبعض السياقات
-  // ترفضه. نبتلع الرفض (وعدٌ لا استثناء) فالإخفاء وحده يكفي.
-  const swallow = () => {};
-  try{
-    if(on && document.documentElement.requestFullscreen){
-      const r = document.documentElement.requestFullscreen();
-      if(r && r.catch) r.catch(swallow);
-    }else if(!on && document.fullscreenElement && document.exitFullscreen){
-      const r = document.exitFullscreen();
-      if(r && r.catch) r.catch(swallow);
-    }
-  }catch(_){}
-  if(CFG.LAYOUT === 'svg') return;   // الرسم المتجه يملأ الحيّز من تلقائه
-  requestAnimationFrame(() => { curEm = null; buildPage(current); autofit(); });
-}
-
 let sx = 0, sy = 0, moved = 0, tracking = false;
 pageEl.addEventListener('touchstart', e => {
   const c = e.changedTouches[0];
@@ -1459,18 +1438,15 @@ pageEl.addEventListener('touchend', e => {
   if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 60){
     if(dx > 0) nextPage(); else prevPage();   // اتجاه تقليب المصحف
   }else if(moved < 12){
-    // لمسةٌ على آية تفتح لوحها، وعلى هامش الصفحة تُبدّل ملء الشاشة
     const el = ayahAt(e.target);
     if(el) openAyah(+el.getAttribute('surah'), +el.getAttribute('ayah'));
-    else toggleImmersive();
   }
 });
-// الفأرة (سطح المكتب): نقرة على آية تفتحها، وعلى الهامش ملء الشاشة
+// الفأرة (سطح المكتب): نقرة على آية تفتح لوحها
 pageEl.addEventListener('click', e => {
   if('ontouchstart' in window) return;
   const el = ayahAt(e.target);
   if(el) openAyah(+el.getAttribute('surah'), +el.getAttribute('ayah'));
-  else toggleImmersive();
 });
 
 document.addEventListener('keydown', e => {
@@ -1539,6 +1515,7 @@ function dlSetBtn(){
 }
 
 async function openDownload(){
+  markSheet();
   $('dsheet').classList.add('show');
   $('backdrop').classList.add('show');
   syncNav();
@@ -1956,6 +1933,7 @@ function openListen(){
     list.appendChild(b);
   });
   $('lsPlay').textContent = 'استمع إلى سورة ' + SURAS[lsSura];
+  markSheet();
   $('lsheet').classList.add('show');
   $('backdrop').classList.add('show');
   syncNav();
