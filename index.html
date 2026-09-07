@@ -7,13 +7,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=5,user-scalable=yes"/>
 <meta name="theme-color" content="#f3ede0" media="(prefers-color-scheme: light)"/>
 <meta name="theme-color" content="#0a1712" media="(prefers-color-scheme: dark)"/>
-<title>مصحف شعبة</title>
+<title>مصحف المدينة بقراءة شعبة</title>
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
 <link rel="icon" href="icons/icon-192.png"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="مصحف شعبة"/>
+<meta name="apple-mobile-web-app-title" content="مصحف المدينة"/>
 <style>
 /* ══════════ الخطوط: محلّية بالكامل — يعمل التطبيق دون إنترنت ══════════
    Scheherazade New (SIL, رخصة OFL) لا Amiri Quran: الأخير لا يغطّي U+065E
@@ -545,7 +545,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-07l',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-07m',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -1352,7 +1352,7 @@ async function ayahCard(su, ay){
   c.fillText('سورة ' + SURAS[su] + ' · الآية ' + arNum(ay), W / 2, ry + 60);
   c.fillStyle = 'rgba(58,49,32,.5)';
   c.font = '400 28px "IBM Plex Sans Arabic", sans-serif';
-  c.fillText('مصحف شعبة', W / 2, ry + 112);
+  c.fillText('مصحف المدينة بقراءة شعبة', W / 2, ry + 112);
 
   return new Promise(r => cv.toBlob(r, 'image/png'));
 }
@@ -1756,7 +1756,7 @@ function renderTrack(){
         : '<div class="hint" style="padding:8px 0">المس آيةً لتكتب حاشيتك عليها</div>') +
     '</div>' +
 
-    '<div class="ver">مصحف شعبة · نسخة \u2066' + CFG.VERSION + '\u2069</div>';
+    '<div class="ver">مصحف المدينة بقراءة شعبة · نسخة \u2066' + CFG.VERSION + '\u2069</div>';
 
   $('trackBody').querySelectorAll('[data-goto]').forEach(b =>
     b.addEventListener('click', () => { switchTab('paneMushaf'); goto(+b.dataset.goto); }));
@@ -1868,7 +1868,7 @@ function mediaSession(rec, sura){
     navigator.mediaSession.metadata = new MediaMetadata({
       title  : 'سورة ' + SURAS[sura],
       artist : rec.name + ' · رواية شعبة عن عاصم',
-      album  : 'مصحف شعبة',
+      album  : 'مصحف المدينة بقراءة شعبة',
       artwork: [{src:'icons/icon-192.png', sizes:'192x192', type:'image/png'},
                 {src:'icons/icon-512.png', sizes:'512x512', type:'image/png'}]
     });
