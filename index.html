@@ -53,6 +53,10 @@
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
+/* سمة hidden يجب أن تُخفي مهما كان المُحدِّد. بدون !important تغلبها أي
+   قاعدةٍ بمعرّف (‎#top button{display:flex}‎ مثلاً) فتبقى العناصر ظاهرة
+   وهي «مخفيّة» في الـDOM — عطلٌ وقع مرّتين في هذا الملف. */
+[hidden]{display:none!important}
 html,body{height:100%;overflow:hidden;overscroll-behavior:none}
 body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
 
@@ -326,7 +330,6 @@ body.immersive #tabs{display:none}
   width:15px;height:15px;border-radius:50%;background:var(--gold);border:none;margin-top:-5.5px}
 #pbSeek::-moz-range-thumb{width:15px;height:15px;border-radius:50%;
   background:var(--gold);border:none}
-#playbar[hidden]{display:none}
 body.immersive #playbar{display:none}
 
 #dsheet{position:fixed;left:0;right:0;bottom:0;z-index:80;
@@ -500,7 +503,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-07',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-07b',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -1346,7 +1349,7 @@ document.querySelectorAll('#tabs button').forEach(b =>
 
    يعمل بالإضافة إلى الحفظ التلقائي: ما قرأه محفوظٌ سلفاً فلا يُعاد جلبه. */
 const DL_KEY = 'shubah:offline';
-let dlRun = false, dlStop = false;
+let dlRun = false, dlStop = false, dlFinished = false;
 
 const dlDone = () => { try{ return localStorage.getItem(DL_KEY) === 'all'; }catch(_){ return false; } };
 
@@ -1397,13 +1400,13 @@ async function openDownload(){
 function dlShow(miss){
   const n = miss.length;
   $('dlGo').hidden = false;
-  $('dlGo').disabled = false;
+  dlFinished = false;
   if(!n){
     $('dlSay').textContent = 'المصحف كامل على الجهاز. يفتح البرنامج ويُقرأ بلا إنترنت.';
     $('dlNum').textContent = '';
     $('dlFill').style.width = '100%';
-    $('dlGo').textContent = 'تمّ';
-    $('dlGo').disabled = true;
+    $('dlGo').textContent = 'تمّ · إغلاق';
+    dlFinished = true;
     try{ localStorage.setItem(DL_KEY, 'all'); }catch(_){}
     dlSetBtn();
     return;
@@ -1469,7 +1472,8 @@ async function runDownload(){
 $('dlBtn').addEventListener('click', openDownload);
 $('dlClose').addEventListener('click', closeDownload);
 $('dlGo').addEventListener('click', () => {
-  if(dlRun){ dlStop = true; $('dlGo').textContent = 'يتوقّف…'; }
+  if(dlFinished) closeDownload();
+  else if(dlRun){ dlStop = true; $('dlGo').textContent = 'يتوقّف…'; }
   else runDownload();
 });
 
