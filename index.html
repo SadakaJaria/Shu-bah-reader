@@ -91,6 +91,14 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 .cart.long .sep{margin:0 5px}
 .cart .sep{flex:0 0 auto;width:1px;height:15px;margin:0 7px;background:var(--bar-line)}
 .cart .pg{flex:0 0 auto;font-size:15px;font-weight:700;opacity:.85}
+.cart .spread{flex:0 0 auto;width:clamp(13px,4vw,17px);height:auto;
+  aspect-ratio:22/15;margin-right:clamp(4px,1.3vw,7px);
+  overflow:visible}
+.cart .spread rect{fill:none;stroke:var(--gold);stroke-width:1.1;opacity:.5}
+.cart .spread rect.on{fill:var(--gold);stroke:var(--gold);opacity:1}
+.cart .spread path{stroke:var(--gold);stroke-width:1.1;opacity:.5}
+.cart.long .spread{width:clamp(11px,3.4vw,15px);margin-right:clamp(3px,1vw,5px)}
+@media (max-width:345px){.cart .spread{display:none}}
 
 body.immersive #top{display:none}
 
@@ -503,7 +511,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-09-07b',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-09-07c',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -967,8 +975,21 @@ function setLabel(p){
   const txt = names.length === 1 ? 'سورة ' + names[0] : names.join(' · ');
   labelEl.innerHTML = '<span class="cart' + (txt.length > 18 ? ' long' : '') +
     '"><span class="nm">' + txt +
-    '</span><i class="sep"></i><span class="pg">' + arNum(p) + '</span></span>';
+    '</span><i class="sep"></i><span class="pg">' + arNum(p) + '</span>' +
+    spreadIcon(p) + '</span>';
   syncMark(p);
+}
+
+/* مصحفٌ مفتوح يدلّ على جهة الصفحة من الورقة: الفردية يمين والزوجية يسار،
+   كما في المصحف المطبوع. من حفظ بمواضع الأسطر حفظ معها جهة الصفحة. */
+function spreadIcon(p){
+  const right = p % 2 === 1;
+  return '<svg class="spread" viewBox="0 0 22 15" aria-hidden="true">' +
+    '<rect x="0.7" y="0.7" width="9.3" height="13.6" rx="1.4"' +
+    (right ? '' : ' class="on"') + '/>' +
+    '<rect x="12" y="0.7" width="9.3" height="13.6" rx="1.4"' +
+    (right ? ' class="on"' : '') + '/>' +
+    '<path d="M11 1.6v11.8"/></svg>';
 }
 
 /* ══════════ العلامات المرجعية ══════════ */
