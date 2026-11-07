@@ -543,7 +543,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-11-07a',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-11-07b',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -1787,9 +1787,15 @@ function renderTrack(){
 
 /* ══════════ الاستماع — رواية شعبة وحدها ══════════ */
 /* لا نُدرج قارئاً استنتاجاً من اسمه: صابر عبد الحكم سجّل بحفص وقالون أيضاً،
-   ومسارات تلك غير هذا. كلّ قارئ هنا مصدره يصرّح بالرواية — إمّا مسار
-   الملفّ ‎/Rewayat-Sho-bah-A-n-Asim/‎ في mp3quran، وإمّا عنوان المادّة في
-   أرشيف الإنترنت. وقد فُحص كلُّ ملفّ من ملفّات الأرشيف الـ١١٤ قبل إدراجه.
+   وديبان سجّل بثلاث عشرة رواية. فلا بدّ لكلّ قارئٍ هنا من مصدرٍ يصرّح
+   بالرواية، وقد فُحص كلُّ ملفٍّ من ملفّاته الـ١١٤ قبل إدراجه.
+
+   وكان مسار mp3quran هو الحجّة إذ يحمل ‎/Rewayat-Sho-bah-A-n-Asim/‎، ثمّ
+   نُقلت الملفّات إلى ‎cdn.mp3quran.net/audio/<قارئ>/rN/‎ — ومسارٌ كهذا
+   أعجم: ‎r2‎ لا تقول شيئاً. فصارت الحجّة كاتالوغ المجمّع نفسه، وهو
+   ‎mp3quran.net/api/v3/reciters?rewaya=15‎ ورقمُ ١٥ هو «شعبة عن عاصم».
+   مَن راجع هذا لاحقاً فليراجعه هناك لا في المسار، ولذلك تُذكر الرواية
+   التي أعلنها الكاتالوغ بجانب كلّ قارئ أدناه.
 
    أسماء الملفّات ليست على نسقٍ واحد، فلكلّ قارئ دالّة file تبني اسم ملفّه
    من رقم السورة. والافتراضيّ ‎001.mp3‎ … ‎114.mp3‎ كما في mp3quran. */
@@ -1814,15 +1820,18 @@ const HAKIM_FILES = (
 const pad3 = n => String(n).padStart(3, '0');
 
 const RECITERS = [
+  // الكاتالوغ: «شعبة عن عاصم - المصحف المجود»، ١١٤ سورة
   { id   : 'sabdulhakam',
     name : 'صابر عبد الحكم',
-    base : 'https://server16.mp3quran.net/The-ten-readings/Rewayat-Sho-bah-A-n-Asim/Sabdulhakam' },
+    base : 'https://cdn.mp3quran.net/audio/saber-abdulhakam/r7' },
+  // الكاتالوغ: «شعبة عن عاصم - مرتل»، ١١٤ سورة
   { id   : 'hthfi',
     name : 'علي الحذيفي',
-    base : 'https://server9.mp3quran.net/hthfi/Rewayat-Sho-bah-A-n-Asim' },
+    base : 'https://cdn.mp3quran.net/audio/ali-hudhaifi/r3' },
+  // الكاتالوغ: «شعبة عن عاصم - مرتل»، ١١٤ سورة
   { id   : 'deban',
     name : 'أحمد ديبان',
-    base : 'https://server16.mp3quran.net/deban/Rewayat-Sho-bah-A-n-Asim' },
+    base : 'https://cdn.mp3quran.net/audio/ahmad-deeban/r2' },
   // من أرشيف الإنترنت لا من المجمّع، ومعرّف المادّة يحمل الرواية: ‎_Shoaba_‎
   { id   : 'yousuf',
     name : 'يوسف بن نوح أحمد',
