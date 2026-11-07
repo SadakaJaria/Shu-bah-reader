@@ -543,7 +543,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-11-07b',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-11-07c',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -1884,6 +1884,7 @@ const setPlayIcon = on => { $('pbToggle').innerHTML = on ? ICON_PAUSE : ICON_PLA
 function playSura(rec, sura, auto){
   if(!rec || sura < 1 || sura > 114) return;
   curRec = rec; curSura = sura; autoNext = !!auto;
+  cancelRetry();   // طلبٌ جديد: رصيد المحاولات يبدأ من أوّله
   try{ localStorage.setItem(AUD_KEY, rec.id); }catch(_){}
   audio.src = audioUrl(rec, sura);
   audio.play().catch(() => {});
@@ -1896,6 +1897,7 @@ function playSura(rec, sura, auto){
 }
 
 function stopAudio(){
+  cancelRetry();
   audio.pause();
   audio.removeAttribute('src');
   try{ audio.load(); }catch(_){}
@@ -1936,11 +1938,35 @@ audio.addEventListener('ended', () => {
   if(curRec && curSura < 114) playSura(curRec, curSura + 1, true);
   else stopAudio();
 });
-// تعذّر الصوت: ننهي بنظافة بدل شريطٍ يقول «يقرأ» ولا صوت.
+/* تعذّر الصوت: نعيد المحاولة قبل أن نستسلم.
+   أرشيف الإنترنت يوزّع ملفّاته على عُقَد تخزين، ويردّ أحياناً خطأ ٥٠٠
+   عابراً من إحداها على ملفٍّ سليمٍ تماماً — ثمّ يأتي الطلب التالي فيعمل.
+   شوهد ذلك في سورٍ بعينها ثمّ عملت هي نفسها بعد ثوانٍ. فمحاولةٌ واحدة
+   ليست حكماً على الملفّ، والأب لا يَعنيه عُطْلُ عُقدةٍ عابر.
+   والمهلة تتضاعف لئلّا نزيد الضغط على خادمٍ متعثّر. */
+const AUD_TRIES = 3;
+let tryN = 0, tryTimer = 0;
+const cancelRetry = () => { clearTimeout(tryTimer); tryTimer = 0; tryN = 0; };
+
+// نجحت القراءة: ننسى ما مضى من تعثّر
+audio.addEventListener('playing', () => { tryN = 0; });
+
 // وإن كان في سورةٍ انتقلنا إليها من تلقائنا فالإنهاء صامت — لم يطلبها.
 audio.addEventListener('error', () => {
   if(!audio.getAttribute('src')) return;
+  const rec = curRec, sura = curSura;
+  if(rec && sura && tryN < AUD_TRIES){
+    tryN++;
+    tryTimer = setTimeout(() => {
+      // لعلّه بدّل السورة أو القارئ في أثناء الانتظار، فلا نَعُد لما تركه
+      if(curRec !== rec || curSura !== sura) return;
+      audio.src = audioUrl(rec, sura);
+      audio.play().catch(() => {});
+    }, 600 * Math.pow(2, tryN - 1));
+    return;
+  }
   const silent = autoNext;
+  cancelRetry();
   stopAudio();
   if(!silent) toast('تعذّر تشغيل الصوت — تحقّق من الاتصال');
 });
