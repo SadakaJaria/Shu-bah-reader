@@ -545,7 +545,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-11-08a',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-11-08b',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -1832,12 +1832,32 @@ const AUD_KEY = 'shubah:reciter';
 let curRec = null, curSura = 0, curAyah = 0, autoNext = false, seeking = false;
 const audio = new Audio();
 audio.preload = 'none';
-/* مشغّلٌ صامت لا يُسمع منه شيء، وظيفته تحميل الآية التالية بينما تُقرأ
-   الحاليّة، فإذا جاء دورها كانت في ذاكرة المتصفّح. بدونه تُسمع فجوةٌ
-   عند كلّ آية؛ ومعه قيست الفجوة ٣ أجزاء من ألف من الثانية. */
-const warm = new Audio();
-warm.preload = 'auto';
-warm.muted = true;
+/* تحميلٌ مسبق للآيتين التاليتين: تُجلب بايتاتهما كاملةً وتُحفظ في
+   الذاكرة، فإذا جاء دور الآية وُضعت في المشغّل بلا طلبِ شبكةٍ أصلاً.
+   وكان قبلُ مشغّلٌ صامتٌ يحمّلها، لكنّ ذلك يُسلّم البايتات إلى عنصرٍ
+   غير العنصر الذي يقرأ، فيتّكل على ذاكرة المتصفّح المؤقّتة — والموسوعة
+   لا ترسل ‎cache-control‎ فيبقى الأمر لتقدير المتصفّح، وقد يُعيد التحميل
+   فتُسمع فجوة. أمّا البايتات في اليد فلا تحتاج إذناً من أحد.
+   وآيتان لا واحدة: آيات السور القصار ثانيةٌ أو ثانيتان، وقد لا تكفي
+   واحدةٌ منها لتحميل ما بعدها على شبكةٍ بطيئة. */
+const PREFETCH = 2;
+const ahead = new Map();     // «قارئ:سورة:آية» ← رابطٌ كائنيّ جاهز
+const fetching = new Set();
+let playingUrl = '';         // الرابط الكائنيّ الذي يُقرأ الآن، لا يُحرَّر
+
+const ayahKey = (rec, s, a) => rec.id + ':' + s + ':' + a;
+
+// وضعُ مصدرٍ في المشغّل مع تحرير ما سبقه من روابط كائنيّة
+function setSrc(src, isObj){
+  if(playingUrl && playingUrl !== src) URL.revokeObjectURL(playingUrl);
+  playingUrl = isObj ? src : '';
+  audio.src = src;
+}
+
+function dropAhead(){
+  for(const u of ahead.values()) URL.revokeObjectURL(u);
+  ahead.clear();
+}
 
 // الاسم الافتراضيّ أرقامٌ بثلاث خانات، وللأرشيف أسماءٌ تحتاج ترميز المسار
 const audioUrl = (rec, sura, aya) =>
@@ -1881,8 +1901,37 @@ function setLoading(on){
 // سخّن الآية التالية ليأتي دورها وهي محمّلة
 function warmNext(){
   if(!curRec || !curRec.perAyah) return;
-  const nxt = curAyah + 1;
-  if(nxt <= ayatOf(curSura)) warm.src = audioUrl(curRec, curSura, nxt);
+  const last = ayatOf(curSura), keep = new Set();
+  for(let i = 1; i <= PREFETCH; i++){
+    const a = curAyah + i;
+    if(a > last) break;
+    const k = ayahKey(curRec, curSura, a);
+    keep.add(k);
+    if(ahead.has(k) || fetching.has(k)) continue;
+    fetching.add(k);
+    fetch(audioUrl(curRec, curSura, a))
+      .then(r => r.ok ? r.blob() : null)
+      .then(bl => {
+        fetching.delete(k);
+        // لعلّه بدّل موضعه أثناء الجلب، فلا نحتفظ بما لم يعد تالياً
+        if(bl && keepNow().has(k)) ahead.set(k, URL.createObjectURL(bl));
+      })
+      .catch(() => fetching.delete(k));
+  }
+  for(const [k, u] of [...ahead])
+    if(!keep.has(k)){ URL.revokeObjectURL(u); ahead.delete(k); }
+}
+
+// الآيات التي ما زالت «تالية» الآن — يُقاس بها ما جاء متأخّراً من الجلب
+function keepNow(){
+  const out = new Set();
+  if(!curRec || !curRec.perAyah) return out;
+  const last = ayatOf(curSura);
+  for(let i = 1; i <= PREFETCH; i++){
+    const a = curAyah + i;
+    if(a <= last) out.add(ayahKey(curRec, curSura, a));
+  }
+  return out;
 }
 
 function playSura(rec, sura, auto, aya){
@@ -1891,7 +1940,8 @@ function playSura(rec, sura, auto, aya){
   curAyah = rec.perAyah ? Math.min(Math.max(aya || 1, 1), ayatOf(sura) || 1) : 0;
   cancelRetry();   // طلبٌ جديد: رصيد المحاولات يبدأ من أوّله
   try{ localStorage.setItem(AUD_KEY, rec.id); }catch(_){}
-  audio.src = audioUrl(rec, sura, curAyah);
+  dropAhead();
+  setSrc(audioUrl(rec, sura, curAyah), false);
   audio.play().catch(() => {});
   $('pbName').textContent = 'سورة ' + SURAS[sura] + ' · ' + rec.name;
   $('pbSeek').value = curAyah > 1 ? Math.round((curAyah - 1) / ayatOf(sura) * 1000) : 0;
@@ -1911,8 +1961,11 @@ function showAyah(){
 
 // الآية التالية من السورة نفسها: تبديل المصدر وحده، فهي محمّلةٌ سلفاً
 function nextAyah(){
+  const k = ayahKey(curRec, curSura, curAyah + 1);
   curAyah++;
-  audio.src = audioUrl(curRec, curSura, curAyah);
+  const ready = ahead.get(k);
+  if(ready) ahead.delete(k);          // صارت تُقرأ، فلا تُحرَّر مع الباقي
+  setSrc(ready || audioUrl(curRec, curSura, curAyah), !!ready);
   audio.play().catch(() => {});
   showAyah();
   warmNext();
@@ -1923,7 +1976,8 @@ function stopAudio(){
   audio.pause();
   audio.removeAttribute('src');
   try{ audio.load(); }catch(_){}
-  warm.removeAttribute('src');
+  dropAhead();
+  if(playingUrl){ URL.revokeObjectURL(playingUrl); playingUrl = ''; }
   curSura = 0; curAyah = 0;
   setLoading(false);
   $('playbar').hidden = true;
@@ -2000,7 +2054,7 @@ audio.addEventListener('error', () => {
     tryTimer = setTimeout(() => {
       // لعلّه بدّل السورة أو الآية أو القارئ، فلا نَعُد لما تركه
       if(curRec !== rec || curSura !== sura || curAyah !== aya) return;
-      audio.src = audioUrl(rec, sura, aya);
+      setSrc(audioUrl(rec, sura, aya), false);
       audio.play().catch(() => {});
     }, 600 * Math.pow(2, tryN - 1));
     return;
