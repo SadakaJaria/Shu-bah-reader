@@ -355,6 +355,8 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
 .pb-mid{flex:1;min-width:0}
 .pb-mid b{display:block;font-family:var(--font-ui);font-size:13px;font-weight:700;
   color:var(--bar-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* أثناء التحميل: الزمن يخفت ويضيق خطّه ليتّسع لـ«جارٍ التحميل…» */
+#playbar.loading #pbTime{opacity:.6;font-size:10.5px;letter-spacing:-.2px}
 #pbTime{flex:0 0 auto;font-family:var(--font-ui);font-size:12px;
   color:var(--bar-ink);opacity:.6;min-width:40px;text-align:center}
 #pbSeek{-webkit-appearance:none;appearance:none;width:100%;height:20px;
@@ -543,7 +545,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-11-07c',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-11-08a',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -584,6 +586,7 @@ async function loadQuran(){
     const v = {sura:row[0], aya:row[1], page:row[2], text:row[5]};
     VERSES.push(v);
     if(!SURA_PAGE[v.sura] || v.page < SURA_PAGE[v.sura]) SURA_PAGE[v.sura] = v.page;
+    if(v.aya > (AYAT[v.sura] || 0)) AYAT[v.sura] = v.aya;   // لتلاوة الآية آية
   });
 }
 
@@ -1672,7 +1675,7 @@ $('themeBtn').addEventListener('click', () => {
    على نهج «صدقة جارية»: الصفحات تُسجَّل تلقائياً أثناء القراءة لا بزرّ.
    read سلسلة ٦٠٤ خانة: خانة لكل صفحة. */
 const TRACK_KEY = 'shubah:track';
-let TRACK = null, markTimer = null, sessionRead = 0;
+let TRACK = null, markTimer = null;
 
 function loadTrack(){
   try{ TRACK = JSON.parse(localStorage.getItem(TRACK_KEY)); }catch(_){}
@@ -1695,22 +1698,13 @@ function markRead(p){
     TRACK.khatmas++;
     TRACK.read = '0'.repeat(604);
   }
-  sessionRead++;
   saveTrack();
   if(currentTab === 'paneTrack') renderTrack();
 }
 
 function readCount(){ return (TRACK.read.match(/1/g) || []).length; }
-function streakDays(){
-  const d = new Date(); let n = 0;
-  if(!TRACK.days[dayKey(d)]) d.setDate(d.getDate() - 1);   // اليوم لم يبدأ بعد
-  while(TRACK.days[dayKey(d)]){ n++; d.setDate(d.getDate() - 1); }
-  return n;
-}
-
 function renderTrack(){
   const done = readCount(), pct = Math.round(done / 604 * 100);
-  const todayN = TRACK.days[dayKey(new Date())] || 0;
   const C = 2 * Math.PI * 52;
 
   const notes = loadNotes(), nk = Object.keys(notes);
@@ -1797,25 +1791,8 @@ function renderTrack(){
    مَن راجع هذا لاحقاً فليراجعه هناك لا في المسار، ولذلك تُذكر الرواية
    التي أعلنها الكاتالوغ بجانب كلّ قارئ أدناه.
 
-   أسماء الملفّات ليست على نسقٍ واحد، فلكلّ قارئ دالّة file تبني اسم ملفّه
-   من رقم السورة. والافتراضيّ ‎001.mp3‎ … ‎114.mp3‎ كما في mp3quran. */
-
-/* أسماء سور الشيخ عبد الحكيم في الأرشيف مجرّدةٌ من الشكل («الفاتحة» لا
-   «الفَاتِحة»)، فلا تُشتقّ من أسماء التطبيق: أربعةٌ منها فقط تتطابق.
-   منقولةٌ حرفاً بحرف من فهرس المادّة. */
-const HAKIM_FILES = (
-  'الفاتحة|البقرة|آل عمران|النساء|المائدة|الأنعام|الأعراف|الأنفال|التوبة|' +
-  'يونس|هود|يوسف|الرعد|إبراهيم|الحجر|النّحل|الإسراء|الكهف|مريم|طه|' +
-  'الأنبياء|الحج|المؤمنون|النور|الفرقان|الشّعراء|النّمل|القصص|العنكبوت|' +
-  'الرّوم|لقمان|السّجدة|الأحزاب|سبأ|فاطر|يس|الصّافات|ص|الزّمر|غافر|فصّلت|' +
-  'الشّورى|الزّخرف|الدخّان|الجاثية|الأحقاف|محمّد|الفتح|الحجرات|ق|' +
-  'الذاريات|الطّور|النجم|القمر|الرّحمن|الواقعة|الحديد|المجادلة|الحشر|' +
-  'الممتحنة|الصّف|الجمعة|المنافقون|التغابن|الطّلاق|التّحريم|الملك|القلم|' +
-  'الحاقّة|المعارج|نوح|الجنّ|المزّمل|المدّثر|القيامة|الإنسان|المرسلات|' +
-  'النّبأ|النّازعات|عبس|التكوير|الإنفطار|المطفّفين|الإنشقاق|البروج|' +
-  'الطّارق|الأعلى|الغاشية|الفجر|البلد|الشّمس|اللّيل|الضّحى|الشّرح|التّين|' +
-  'العلق|القدر|البيّنة|الزّلزلة|العاديات|القارعة|التّكاثر|العصر|الهمزة|' +
-  'الفيل|قريش|الماعون|الكوثر|الكافرون|النّصر|المسد|الإخلاص|الفلق|النّاس').split('|');
+   ونسقان للملفّات: الافتراضيّ سورةً سورة ‎001.mp3‎ … ‎114.mp3‎، ومن عليه
+   علامة ‎perAyah‎ فملفّاته آيةً آية ‎SSSAAA.mp3‎. */
 
 const pad3 = n => String(n).padStart(3, '0');
 
@@ -1836,28 +1813,41 @@ const RECITERS = [
   { id   : 'yousuf',
     name : 'يوسف بن نوح أحمد',
     base : 'https://archive.org/download/Al-Quran_Shoaba_tilawat_Yousuf_Ahmad' },
-  /* «المصحف المرتل برواية شعبة عن عاصم بصوت الشيخ عبد الحكيم عبد اللطيف».
-     اسم الملفّ: رقمٌ ثمّ مسافةٌ ثمّ اسم السورة. */
-  { id   : 'hakim',
-    name : 'عبد الحكيم عبد اللطيف',
-    base : 'https://archive.org/download/shoabaabdelhakem',
-    file : s => pad3(s) + ' ' + HAKIM_FILES[s - 1] + '.mp3' },
-  /* «مصحف عبدالرشيد صوفي برواية شعبة عن عاصم ١١٤ سورة كامل».
-     رفعه صاحبه على دفعتين، فالسور ١–٦٤ باسم ‎001L.mp3‎ وما بعدها
-     ‎065L_2.mp3‎ — تسميةٌ غير مطّردة تَبِعناها كما هي في المادّة. */
-  { id   : 'sufi',
-    name : 'عبد الرشيد صوفي',
-    base : 'https://archive.org/download/002-l_20dddd2206dddd',
-    file : s => pad3(s) + (s <= 64 ? 'L.mp3' : 'L_2.mp3') },
+  /* هذان من «موسوعة القرآن» (quranpedia)، وكاتالوغها يصرّح بالرواية:
+     rawi = شعبة، و١١٤ سورة لكليهما. وملفّاتهما **آيةً آية** لا سورةً
+     سورة: ‎SSSAAA.mp3‎ — فسورة البقرة آيةُ ٥ هي ‎002005.mp3‎.
+     وكانا قبلُ من أرشيف الإنترنت سورةً سورة، فنُقلا: ملفّ السورة هناك
+     يبلغ ٦٥ ميغا فيتأخّر بدؤه أربع ثوانٍ، وملفّ الآية هنا ٣٠ كيلو
+     فيبدأ في نصف ثانية — وعُقَد الأرشيف كانت تتعثّر أيضاً. */
+  { id      : 'hakim',
+    name    : 'عبد الحكيم عبد اللطيف',
+    base    : 'https://files.quranpedia.net/recitations/276',
+    perAyah : true },
+  { id      : 'sufi',
+    name    : 'عبد الرشيد صوفي',
+    base    : 'https://files.quranpedia.net/recitations/275',
+    perAyah : true },
 ];
 const AUD_KEY = 'shubah:reciter';
-let curRec = null, curSura = 0, autoNext = false, seeking = false;
+let curRec = null, curSura = 0, curAyah = 0, autoNext = false, seeking = false;
 const audio = new Audio();
 audio.preload = 'none';
+/* مشغّلٌ صامت لا يُسمع منه شيء، وظيفته تحميل الآية التالية بينما تُقرأ
+   الحاليّة، فإذا جاء دورها كانت في ذاكرة المتصفّح. بدونه تُسمع فجوةٌ
+   عند كلّ آية؛ ومعه قيست الفجوة ٣ أجزاء من ألف من الثانية. */
+const warm = new Audio();
+warm.preload = 'auto';
+warm.muted = true;
 
 // الاسم الافتراضيّ أرقامٌ بثلاث خانات، وللأرشيف أسماءٌ تحتاج ترميز المسار
-const audioUrl = (rec, sura) =>
-  rec.base + '/' + encodeURIComponent(rec.file ? rec.file(sura) : pad3(sura) + '.mp3');
+const audioUrl = (rec, sura, aya) =>
+  rec.perAyah
+    ? rec.base + '/' + pad3(sura) + pad3(aya || 1) + '.mp3'
+    : rec.base + '/' + pad3(sura) + '.mp3';
+
+// عدد آيات كلّ سورة — يُشتقّ من المصحف نفسه لا من جدولٍ مكتوب
+const AYAT = {};
+const ayatOf = s => AYAT[s] || 0;
 
 function pickedReciter(){
   let saved = null;
@@ -1881,19 +1871,51 @@ const ICON_PLAY  = '<svg viewBox="0 0 24 24"><path d="M7 5v14l12-7z"/></svg>';
 const ICON_PAUSE = '<svg viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>';
 const setPlayIcon = on => { $('pbToggle').innerHTML = on ? ICON_PAUSE : ICON_PLAY; };
 
-function playSura(rec, sura, auto){
+/* «جارٍ التحميل» مكان الزمن. من ضغط فسمع صمتاً ثانيتين ظنّ العطل،
+   والصمت بلا بيانٍ هو الشكوى نفسها التي رفعها صاحب البرنامج. */
+function setLoading(on){
+  $('playbar').classList.toggle('loading', !!on);
+  if(on) $('pbTime').textContent = 'جارٍ التحميل…';
+}
+
+// سخّن الآية التالية ليأتي دورها وهي محمّلة
+function warmNext(){
+  if(!curRec || !curRec.perAyah) return;
+  const nxt = curAyah + 1;
+  if(nxt <= ayatOf(curSura)) warm.src = audioUrl(curRec, curSura, nxt);
+}
+
+function playSura(rec, sura, auto, aya){
   if(!rec || sura < 1 || sura > 114) return;
   curRec = rec; curSura = sura; autoNext = !!auto;
+  curAyah = rec.perAyah ? Math.min(Math.max(aya || 1, 1), ayatOf(sura) || 1) : 0;
   cancelRetry();   // طلبٌ جديد: رصيد المحاولات يبدأ من أوّله
   try{ localStorage.setItem(AUD_KEY, rec.id); }catch(_){}
-  audio.src = audioUrl(rec, sura);
+  audio.src = audioUrl(rec, sura, curAyah);
   audio.play().catch(() => {});
   $('pbName').textContent = 'سورة ' + SURAS[sura] + ' · ' + rec.name;
-  $('pbTime').textContent = '٠:٠٠';
-  $('pbSeek').value = 0;
+  $('pbSeek').value = curAyah > 1 ? Math.round((curAyah - 1) / ayatOf(sura) * 1000) : 0;
   $('playbar').hidden = false;
+  setLoading(true);
   setPlayIcon(true);
+  warmNext();
   mediaSession(rec, sura);
+}
+
+// «آية ن من م» — تُكتب فور تبدّل الآية لا عند أوّل نبضةٍ بعدها
+function showAyah(){
+  const n = ayatOf(curSura);
+  if(curRec && curRec.perAyah && n)
+    $('pbTime').textContent = 'آية ' + arNum(curAyah) + '/' + arNum(n);
+}
+
+// الآية التالية من السورة نفسها: تبديل المصدر وحده، فهي محمّلةٌ سلفاً
+function nextAyah(){
+  curAyah++;
+  audio.src = audioUrl(curRec, curSura, curAyah);
+  audio.play().catch(() => {});
+  showAyah();
+  warmNext();
 }
 
 function stopAudio(){
@@ -1901,7 +1923,9 @@ function stopAudio(){
   audio.pause();
   audio.removeAttribute('src');
   try{ audio.load(); }catch(_){}
-  curSura = 0;
+  warm.removeAttribute('src');
+  curSura = 0; curAyah = 0;
+  setLoading(false);
   $('playbar').hidden = true;
 }
 
@@ -1928,14 +1952,29 @@ function mediaSession(rec, sura){
 
 audio.addEventListener('play',  () => setPlayIcon(true));
 audio.addEventListener('pause', () => setPlayIcon(false));
+// التعثّر أثناء القراءة كالتعثّر في بدئها: يُقال ولا يُترك صمتاً
+audio.addEventListener('waiting', () => setLoading(true));
+audio.addEventListener('stalled', () => setLoading(true));
+audio.addEventListener('playing', () => setLoading(false));
 audio.addEventListener('timeupdate', () => {
   if(seeking || !audio.duration) return;
+  setLoading(false);
+  const n = ayatOf(curSura);
+  if(curRec && curRec.perAyah && n){
+    // الشريط يمشي على الآيات، والنصّ يقول أيَّ آيةٍ يقرأ الآن
+    const done = (curAyah - 1) + audio.currentTime / audio.duration;
+    $('pbSeek').value = Math.round(Math.min(done / n, 1) * 1000);
+    $('pbTime').textContent = 'آية ' + arNum(curAyah) + '/' + arNum(n);
+    return;
+  }
   $('pbSeek').value = Math.round(audio.currentTime / audio.duration * 1000);
   $('pbTime').textContent = mmss(audio.currentTime);
 });
-// انتهت السورة: نُتبعها بالتي بعدها — تلاوةٌ متّصلة بلا لمس
+// انتهت الآية فالتي بعدها، وانتهت السورة فالتي بعدها — تلاوةٌ بلا لمس
 audio.addEventListener('ended', () => {
-  if(curRec && curSura < 114) playSura(curRec, curSura + 1, true);
+  if(!curRec) return stopAudio();
+  if(curRec.perAyah && curAyah < ayatOf(curSura)){ nextAyah(); return; }
+  if(curSura < 114) playSura(curRec, curSura + 1, true);
   else stopAudio();
 });
 /* تعذّر الصوت: نعيد المحاولة قبل أن نستسلم.
@@ -1954,13 +1993,14 @@ audio.addEventListener('playing', () => { tryN = 0; });
 // وإن كان في سورةٍ انتقلنا إليها من تلقائنا فالإنهاء صامت — لم يطلبها.
 audio.addEventListener('error', () => {
   if(!audio.getAttribute('src')) return;
-  const rec = curRec, sura = curSura;
+  const rec = curRec, sura = curSura, aya = curAyah;
   if(rec && sura && tryN < AUD_TRIES){
     tryN++;
+    setLoading(true);
     tryTimer = setTimeout(() => {
-      // لعلّه بدّل السورة أو القارئ في أثناء الانتظار، فلا نَعُد لما تركه
-      if(curRec !== rec || curSura !== sura) return;
-      audio.src = audioUrl(rec, sura);
+      // لعلّه بدّل السورة أو الآية أو القارئ، فلا نَعُد لما تركه
+      if(curRec !== rec || curSura !== sura || curAyah !== aya) return;
+      audio.src = audioUrl(rec, sura, aya);
       audio.play().catch(() => {});
     }, 600 * Math.pow(2, tryN - 1));
     return;
@@ -1973,6 +2013,15 @@ audio.addEventListener('error', () => {
 
 $('pbSeek').addEventListener('input',  () => { seeking = true; });
 $('pbSeek').addEventListener('change', () => {
+  const n = ayatOf(curSura);
+  if(curRec && curRec.perAyah && n){
+    // التنقّل هنا بالآيات: الشريط يختار آيةً فتُقرأ من أوّلها
+    const want = Math.min(n, Math.floor($('pbSeek').value / 1000 * n) + 1);
+    seeking = false;
+    // طلبٌ منه هو، فإن تعذّر فليُقَل له — لا يُبتلع كما يُبتلع الانتقال التلقائيّ
+    if(want !== curAyah) playSura(curRec, curSura, false, want);
+    return;
+  }
   if(audio.duration) audio.currentTime = $('pbSeek').value / 1000 * audio.duration;
   seeking = false;
 });
