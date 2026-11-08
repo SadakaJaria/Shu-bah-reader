@@ -395,6 +395,9 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
   border:none;background:var(--gold);color:#2a2313;cursor:pointer;
   font-family:var(--font-ui);font-size:17px;font-weight:700}
 .ls-play:active{transform:scale(.98)}
+/* صفحةٌ فيها أكثر من سورة: زرٌّ لكلّ واحدة، فلا يُخمَّن عنه */
+.ls-play.more{height:50px;margin-top:8px;font-size:16px}
+.ls-play .st{font-weight:700;opacity:.62;font-size:13px;margin-right:6px}
 #msg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
   padding:32px;text-align:center;font-size:19px;line-height:1.9;
   color:var(--mushaf-ink);background:var(--mushaf-bg);z-index:50}
@@ -527,7 +530,7 @@ body{font-family:var(--font-ui);-webkit-text-size-adjust:100%;-webkit-tap-highli
     <button id="lsClose" aria-label="إغلاق">×</button>
   </div>
   <div id="lsList"></div>
-  <button class="ls-play" id="lsPlay"></button>
+  <div id="lsPlays"></div>
 </div>
 
 <div id="msg" class="show">جارِ فتح المصحف…</div>
@@ -545,7 +548,7 @@ const CFG = {
   DATA      : 'quran-shubah.json',
   SVG_DIR   : 'pages',     // NNN.svg.br تُقدَّم بترويسة Content-Encoding: br
   STORE_KEY : 'shubah:lastPage',
-  VERSION   : '2026-11-08b',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
+  VERSION   : '2026-11-08c',   // تظهر أسفل لوح المتابعة: تعرف أي نسخة عنده
   REF       : 44,          // حجم مرجعي للقياس
   MAX_SIZE  : 46,          // سقف حجم الخطّ (للشاشات العريضة)
   // [سعة السطر بوحدة em, أقصى عدد أسطر تحتاجه صفحة في المصحف كلّه].
@@ -1875,13 +1878,6 @@ function pickedReciter(){
   return RECITERS.find(r => r.id === saved) || RECITERS[0];
 }
 
-/* السورة المقصودة من صفحةٍ ما: أوّل سورة فيها.
-   يفتح أبوك الصفحة ويضغط الزرّ فيسمع سورتها، بلا اختيارٍ إضافي. */
-function suraOfPage(p){
-  const ayat = PAGES.get(p) || [];
-  return ayat.length ? ayat[0].sura : 1;
-}
-
 function mmss(t){
   if(!isFinite(t) || t < 0) t = 0;
   return arNum(Math.floor(t / 60)) + ':' + arNum(Math.floor(t % 60)).padStart(2, '٠');
@@ -2085,10 +2081,22 @@ $('pbToggle').addEventListener('click', () => {
 $('pbClose').addEventListener('click', stopAudio);
 
 /* ── لوح اختيار القارئ ── */
-let lsPick = null, lsSura = 1;
+let lsPick = null;
+
+/* كلّ سورةٍ في الصفحة، بترتيب ورودها.
+   وكان الزرّ يعرض «أوّل سورة في الصفحة» وحدها، فمن فتح صفحة ٢٩٣ ليقرأ
+   الكهف سمع الإسراء: تلك الصفحة تبدأ بآخر سبع آياتٍ من الإسراء ثمّ
+   تبدأ الكهف. وفي ٥٤ صفحةً أكثرُ من سورة، في ٤٨ منها أوّلُ السورتين
+   ليست التي تبدأ هناك. ولا يصلح الترجيح بالأكثر أسطراً: الإسراء في تلك
+   الصفحة تسعة أسطر والكهف أربعة، والمراد الكهف. فلا يُخمَّن: تُعرض
+   السورتان ويختار هو. */
+function surasOfPage(p){
+  const seen = [];
+  for(const a of (PAGES.get(p) || [])) if(!seen.includes(a.sura)) seen.push(a.sura);
+  return seen.length ? seen : [1];
+}
 
 function openListen(){
-  lsSura = suraOfPage(current);
   lsPick = pickedReciter();
   const list = $('lsList');
   list.innerHTML = '';
@@ -2104,7 +2112,19 @@ function openListen(){
     });
     list.appendChild(b);
   });
-  $('lsPlay').textContent = 'استمع إلى سورة ' + SURAS[lsSura];
+  const suras = surasOfPage(current), many = suras.length > 1;
+  const plays = $('lsPlays');
+  plays.innerHTML = '';
+  suras.forEach(su => {
+    const b = document.createElement('button');
+    b.className = 'ls-play' + (many ? ' more' : '');
+    // عند التعدّد نُبيّن أين تبدأ كلُّ واحدة، فالاختيار على بيّنة
+    const starts = (PAGES.get(current) || []).some(a => a.sura === su && a.aya === 1);
+    b.innerHTML = 'استمع إلى سورة ' + SURAS[su] +
+      (many ? '<i class="st">' + (starts ? 'تبدأ هنا' : 'تتمّة') + '</i>' : '');
+    b.addEventListener('click', () => playFromSheet(su));
+    plays.appendChild(b);
+  });
   markSheet();
   $('lsheet').classList.add('show');
   $('backdrop').classList.add('show');
@@ -2122,19 +2142,25 @@ function redecorate(){
 }
 addEventListener('resize', redecorate);
 addEventListener('orientationchange', redecorate);
+/* الخرطوش محسوبٌ وقت الرسم من أبعاد الصفحة، فإن تغيّرت بقي هو مكانه.
+   وشريط التشغيل يظهر فيأخذ ستّين بكسلاً من ارتفاعها، والصفحة موسَّطةٌ
+   فينزاح المصحف ثلاثين بكسلاً إلى أعلى ويبقى الخرطوش — فيفترقان.
+   وحدث resize لا يقع هنا لأنّ النافذة لم تتغيّر، فنرقب الصفحة نفسها:
+   يشمل ذلك ظهور الشريط واختفاءه وكلَّ تغيّرٍ آخر في ارتفاعها. */
+if(window.ResizeObserver) new ResizeObserver(redecorate).observe(pageEl);
 
 $('listenBtn').addEventListener('click', openListen);
 $('lsClose').addEventListener('click', closeListen);
-$('lsPlay').addEventListener('click', () => {
+function playFromSheet(sura){
   closeListen();
   // نفس القارئ ونفس السورة تعمل: نستأنف من موضعها لا نُعيدها من أوّلها
-  if(curRec && lsPick && curRec.id === lsPick.id && curSura === lsSura
+  if(curRec && lsPick && curRec.id === lsPick.id && curSura === sura
      && audio.getAttribute('src')){
     if(audio.paused) audio.play().catch(() => {});
     return;
   }
-  playSura(lsPick, lsSura);
-});
+  playSura(lsPick, sura);
+}
 
 /* ══════════ الفروق بين روايتي شعبة وحفص ══════════ */
 /* البيانات كلّها من جدول الفروق الذي زوّدنا به صاحب البرنامج (nquran.com).
